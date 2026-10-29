@@ -109,7 +109,7 @@ render_header('Dashboard', 'dashboard', flash_message());
 ?>
 
 <section class="hero">
-    <h2>halo</h2>
+    <h2>hai</h2>
     <p>
         Pantau hasil panen, kelola jenis ikan dan kolam,
         serta lihat ringkasan produksi dari satu dashboard.
