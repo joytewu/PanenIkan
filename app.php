@@ -435,7 +435,7 @@ tbody tr:hover{background:#fbfdfc}
 
 <?php if ($page === 'dashboard'): ?>
 <section class="hero">
-    <h2>Selamat datang di PanenIkan 👋</h2>
+    <h2><h2>Dashboard Pemantauan Panen Ikan</h2>👋</h2>
     <p>Pantau hasil panen, kelola jenis ikan dan kolam, serta lihat ringkasan produksi dari satu dashboard.</p>
 </section>
 
