@@ -563,7 +563,7 @@ tbody tr:hover{background:#fbfdfc}
     <div class="stat"><div class="stat-top">Berat Total <span class="stat-icon">⚖</span></div><div class="stat-number"><?= number_format($beratLaporan,2) ?> <small style="font-size:13px">kg</small></div><div class="stat-note">berat panen terfilter</div></div>
 </section>
 <section class="panel">
-    <div class="panel-head"><div><h2>Hasil Laporan Panen</h2><div class="muted">Gunakan tombol cetak untuk menyimpan laporan melalui browser.</div></div><button class="btn light" type="button" onclick="window.print()">Cetak Laporan</button></div>
+    <div class="panel-head"><div><h2>Hasil Laporan Panen</h2><div class="muted">Gunakan tombol cetak untuk menyimpan laporan melalui browser.</div></div><button class="btn light" type="button" onclick="window.print()">Print Laporan</button></div>
     <div class="table-wrap"><table><thead><tr><th>No.</th><th>Tanggal</th><th>Jenis Ikan</th><th>Kolam</th><th>Jumlah (ekor)</th><th>Berat (kg)</th></tr></thead><tbody>
     <?php if (!$panenRows): ?><tr><td colspan="6" class="empty">Tidak ada data yang cocok dengan filter.</td></tr>
     <?php else: foreach ($panenRows as $i=>$r): ?><tr><td><?= $i+1 ?></td><td><?= e($r['tanggal']) ?></td><td><?= e($r['nama_ikan']) ?></td><td><?= e($r['nama_kolam']) ?></td><td><?= number_format((int)$r['jumlah_ekor']) ?></td><td><?= number_format((float)$r['berat_kg'],2) ?></td></tr><?php endforeach; endif; ?>
