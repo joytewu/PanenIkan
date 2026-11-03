@@ -435,7 +435,7 @@ tbody tr:hover{background:#fbfdfc}
 
 <?php if ($page === 'dashboard'): ?>
 <section class="hero">
-    <h2><h2>halooo</h2>👋</h2>
+    <h2><h2>halooo</h2>👋 </h2>
     <p>Pantau hasil panen, kelola jenis ikan dan kolam, serta lihat ringkasan produksi dari satu dashboard.</p>
 </section>
 
@@ -505,7 +505,7 @@ tbody tr:hover{background:#fbfdfc}
 </section>
 <section class="panel">
     <div class="panel-head"><div><h2>Daftar Hasil Panen</h2><div class="muted"><?= count($panenRows) ?> catatan ditampilkan.</div></div></div>
-    <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Jenis Ikan</th><th>Kolam</th><th>Jumlah</th><th>Berat</th><th>Aksi</th></tr></thead><tbody>
+    <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Jenis Ikan</th><th>Kolam</th><th>Jumlah</th><th>Berat (kg)</th><th>Aksi</th></tr></thead><tbody>
     <?php if (!$panenRows): ?><tr><td colspan="6" class="empty">Belum ada data panen.</td></tr>
     <?php else: foreach ($panenRows as $r): ?><tr><td><?= e($r['tanggal']) ?></td><td><?= e($r['nama_ikan']) ?></td><td><?= e($r['nama_kolam']) ?></td><td><?= number_format((int)$r['jumlah_ekor']) ?></td><td><?= number_format((float)$r['berat_kg'],2) ?> kg</td><td><div class="actions"><a class="btn light small" href="app.php?page=panen&edit=<?= e($r['id']) ?>">Edit</a><form class="inline-form" method="post" onsubmit="return confirm('Yakin ingin menghapus data panen ini?')"><input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>"><input type="hidden" name="action" value="hapus_panen"><input type="hidden" name="id" value="<?= e($r['id']) ?>"><button class="btn red small" type="submit">Hapus</button></form></div></td></tr><?php endforeach; endif; ?>
     </tbody></table></div>
