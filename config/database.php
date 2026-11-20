@@ -1,14 +1,19 @@
+
 <?php
 
-$conn = new mysqli(
-    'localhost',
-    'panenikan_app',
-    'PanenIkan2026!',
-    'panenikan'
-);
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-if ($conn->connect_error) {
-    die('Koneksi database gagal: ' . $conn->connect_error);
+try {
+    $conn = new mysqli(
+        'localhost',
+        'panenikan_app',
+        'PanenIkan2026!',
+        'panenikan'
+    );
+
+    $conn->set_charset('utf8mb4');
+
+} catch (mysqli_sql_exception $e) {
+    error_log('Database connection error: ' . $e->getMessage());
+    die('Koneksi database gagal. Periksa konfigurasi database PanenIkan.');
 }
-
-$conn->set_charset('utf8mb4');
