@@ -1,0 +1,32 @@
+
+# File konfigurasi lokal
+.env
+.env.*
+
+# File log aplikasi
+storage/logs/*
+!storage/logs/.gitkeep
+
+# File backup database
+storage/backups/*
+!storage/backups/.gitkeep
+
+# File sementara
+*.tmp
+*.log
+*.bak
+
+# Cache
+.cache/
+tmp/
+
+# Editor
+.vscode/
+.idea/
+
+# Sistem operasi
+.DS_Store
+Thumbs.db
+
+# Dependency
+/vendor/

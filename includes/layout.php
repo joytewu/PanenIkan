@@ -42,7 +42,14 @@ function render_header($title, $active, $success = '', $error = '') {
         <h1><?= e($title) ?></h1>
         <div class="subtitle">Kelola dan pantau hasil panen ikan dengan mudah.</div>
     </div>
-    <div class="user">● &nbsp; Admin PanenIkan</div>
+    <div class="user">
+    ● &nbsp;
+    <?= e($_SESSION['nama'] ?? 'Admin PanenIkan') ?>
+
+    <a href="<?= e(APP_URL) ?>/auth/logout.php" class="btn light small">
+         Logout
+    </a>
+</div>
 </header>
 <?php if ($success): ?><div class="notice"><?= e($success) ?></div><?php endif; ?>
 <?php if ($error): ?><div class="error"><?= e($error) ?></div><?php endif; ?>
