@@ -1,5 +1,6 @@
 
 <?php
+<<<<<<< HEAD
 
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/includes/layout.php';
@@ -23,6 +24,78 @@ $totalKolam = $conn->query(
 
 // Mengambil ringkasan produksi berdasarkan jenis ikan
 $summary = $conn->query(
+=======
+require __DIR__ . '/includes/bootstrap.php';
+require __DIR__ . '/includes/layout.php';
+
+/*
+|--------------------------------------------------------------------------
+| Memeriksa koneksi database
+|--------------------------------------------------------------------------
+*/
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    die('Error: Koneksi database tidak tersedia. Periksa includes/bootstrap.php.');
+}
+
+/*
+|--------------------------------------------------------------------------
+| Menjalankan query dengan pemeriksaan error
+|--------------------------------------------------------------------------
+*/
+function dashboardQuery($conn, $sql)
+{
+    $result = $conn->query($sql);
+
+    if ($result === false) {
+        error_log('Dashboard query error: ' . $conn->error);
+        http_response_code(500);
+        die('Terjadi kesalahan saat mengambil data dashboard. Periksa log error PHP.');
+    }
+
+    return $result;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Statistik dashboard
+|--------------------------------------------------------------------------
+*/
+$result = dashboardQuery(
+    $conn,
+    'SELECT COUNT(*) AS total FROM panen'
+);
+$row = $result->fetch_assoc();
+$totalPanen = $row['total'] ?? 0;
+
+$result = dashboardQuery(
+    $conn,
+    'SELECT COALESCE(SUM(jumlah_ekor), 0) AS total FROM panen'
+);
+$row = $result->fetch_assoc();
+$totalEkor = $row['total'] ?? 0;
+
+$result = dashboardQuery(
+    $conn,
+    'SELECT COALESCE(SUM(berat_kg), 0) AS total FROM panen'
+);
+$row = $result->fetch_assoc();
+$totalBerat = $row['total'] ?? 0;
+
+$result = dashboardQuery(
+    $conn,
+    'SELECT COUNT(*) AS total FROM kolam'
+);
+$row = $result->fetch_assoc();
+$totalKolam = $row['total'] ?? 0;
+
+/*
+|--------------------------------------------------------------------------
+| Ringkasan produksi berdasarkan jenis ikan
+|--------------------------------------------------------------------------
+*/
+$summary = dashboardQuery(
+    $conn,
+>>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132
     'SELECT
         j.nama_ikan,
         COALESCE(SUM(p.jumlah_ekor), 0) AS ekor,
@@ -33,8 +106,18 @@ $summary = $conn->query(
      ORDER BY j.nama_ikan'
 )->fetch_all(MYSQLI_ASSOC);
 
+<<<<<<< HEAD
 // Mengambil enam catatan panen terbaru
 $recentRows = $conn->query(
+=======
+/*
+|--------------------------------------------------------------------------
+| Data enam panen terbaru
+|--------------------------------------------------------------------------
+*/
+$recentRows = dashboardQuery(
+    $conn,
+>>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132
     'SELECT
         p.tanggal,
         j.nama_ikan,
@@ -42,12 +125,18 @@ $recentRows = $conn->query(
         p.jumlah_ekor,
         p.berat_kg
      FROM panen p
+<<<<<<< HEAD
      JOIN jenis_ikan j ON p.jenis_ikan_id = j.id
      JOIN kolam k ON p.kolam_id = k.id
+=======
+     INNER JOIN jenis_ikan j ON p.jenis_ikan_id = j.id
+     INNER JOIN kolam k ON p.kolam_id = k.id
+>>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132
      ORDER BY p.tanggal DESC, p.id DESC
      LIMIT 6'
 )->fetch_all(MYSQLI_ASSOC);
 
+<<<<<<< HEAD
 // Menampilkan header
 render_header('Dashboard', 'dashboard', flash_message());
 
@@ -55,6 +144,18 @@ render_header('Dashboard', 'dashboard', flash_message());
 
 <section class="hero">
     <h2>Selamat datang di PanenIkan 👋</h2>
+=======
+/*
+|--------------------------------------------------------------------------
+| Header halaman
+|--------------------------------------------------------------------------
+*/
+render_header('Dashboard', 'dashboard', flash_message());
+?>
+
+<section class="hero">
+    <h2>halooo</h2>
+>>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132
     <p>
         Pantau hasil panen, kelola jenis ikan dan kolam,
         serta lihat ringkasan produksi dari satu dashboard.
@@ -112,7 +213,10 @@ render_header('Dashboard', 'dashboard', flash_message());
 
 <div class="grid2">
 
+<<<<<<< HEAD
     <!-- Akses Cepat -->
+=======
+>>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132
     <section class="panel">
 
         <div class="panel-head">
@@ -160,7 +264,10 @@ render_header('Dashboard', 'dashboard', flash_message());
 
     </section>
 
+<<<<<<< HEAD
     <!-- Ringkasan Produksi -->
+=======
+>>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132
     <section class="panel">
 
         <div class="panel-head">
@@ -170,12 +277,17 @@ render_header('Dashboard', 'dashboard', flash_message());
             </div>
         </div>
 
+<<<<<<< HEAD
         <?php if (!$summary): ?>
+=======
+        <?php if (empty($summary)): ?>
+>>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132
 
             <div class="empty">Belum ada jenis ikan.</div>
 
         <?php else: ?>
 
+<<<<<<< HEAD
             <?php foreach ($summary as $s):
 
                 $pct = $totalEkor > 0
@@ -183,6 +295,18 @@ render_header('Dashboard', 'dashboard', flash_message());
                     : 0;
 
             ?>
+=======
+            <?php foreach ($summary as $s): ?>
+
+                <?php
+                $persentase = (float) $totalEkor > 0
+                    ? min(
+                        100,
+                        ((int) $s['ekor'] / (int) $totalEkor) * 100
+                    )
+                    : 0;
+                ?>
+>>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132
 
                 <div class="bar-row">
 
@@ -196,8 +320,13 @@ render_header('Dashboard', 'dashboard', flash_message());
                     <div class="bar-track">
                         <div
                             class="bar-fill"
+<<<<<<< HEAD
                             style="width: <?= round($pct, 1) ?>%">
                         </div>
+=======
+                            style="width: <?= round($persentase, 1) ?>%;"
+                        ></div>
+>>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132
                     </div>
 
                     <div class="muted">
@@ -214,11 +343,17 @@ render_header('Dashboard', 'dashboard', flash_message());
 
 </div>
 
+<<<<<<< HEAD
 <!-- Panen Terbaru -->
 <section class="panel">
 
     <div class="panel-head">
 
+=======
+<section class="panel">
+
+    <div class="panel-head">
+>>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132
         <div>
             <h2>Panen Terbaru</h2>
             <div class="muted">
@@ -226,10 +361,14 @@ render_header('Dashboard', 'dashboard', flash_message());
             </div>
         </div>
 
+<<<<<<< HEAD
         <a class="btn light" href="panen.php">
             Lihat Semua →
         </a>
 
+=======
+        <a class="btn light" href="panen.php">Lihat Semua →</a>
+>>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132
     </div>
 
     <div class="table-wrap">
@@ -248,7 +387,11 @@ render_header('Dashboard', 'dashboard', flash_message());
 
             <tbody>
 
+<<<<<<< HEAD
                 <?php if (!$recentRows): ?>
+=======
+                <?php if (empty($recentRows)): ?>
+>>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132
 
                     <tr>
                         <td colspan="5" class="empty">

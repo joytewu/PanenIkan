@@ -1,0 +1,24 @@
+CREATE DATABASE IF NOT EXISTS panenikan CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE panenikan;
+
+CREATE TABLE IF NOT EXISTS jenis_ikan (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nama_ikan VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS kolam (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nama_kolam VARCHAR(100) NOT NULL UNIQUE,
+  lokasi VARCHAR(150) NULL
+);
+
+CREATE TABLE IF NOT EXISTS panen (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  tanggal DATE NOT NULL,
+  jenis_ikan_id INT NOT NULL,
+  kolam_id INT NOT NULL,
+  jumlah_ekor INT NOT NULL,
+  berat_kg DECIMAL(10,2) NOT NULL,
+  FOREIGN KEY (jenis_ikan_id) REFERENCES jenis_ikan(id),
+  FOREIGN KEY (kolam_id) REFERENCES kolam(id)
+);

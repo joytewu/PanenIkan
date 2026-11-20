@@ -42,6 +42,7 @@ function render_header($title, $active, $success = '', $error = '') {
         <h1><?= e($title) ?></h1>
         <div class="subtitle">Kelola dan pantau hasil panen ikan dengan mudah.</div>
     </div>
+<<<<<<< HEAD
     <div class="user">
     ● &nbsp;
     <?= e($_SESSION['nama'] ?? 'Admin PanenIkan') ?>
@@ -50,6 +51,9 @@ function render_header($title, $active, $success = '', $error = '') {
          Logout
     </a>
 </div>
+=======
+    <div class="user">● &nbsp; Admin PanenIkan</div>
+>>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132
 </header>
 <?php if ($success): ?><div class="notice"><?= e($success) ?></div><?php endif; ?>
 <?php if ($error): ?><div class="error"><?= e($error) ?></div><?php endif; ?>

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 <?php
 
@@ -480,3 +481,8 @@ render_header('Data Panen', 'panen', flash_message(), $error);
 </section>
 
 <?php render_footer(); ?>
+=======
+<?php
+header('Location: app.php?page=panen');
+exit;
+>>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132

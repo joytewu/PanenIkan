@@ -1,4 +1,5 @@
 
+<<<<<<< HEAD
 # File konfigurasi lokal
 .env
 .env.*
@@ -30,3 +31,7 @@ Thumbs.db
 
 # Dependency
 /vendor/
+=======
+# File konfigurasi database rahasia
+db.php
+>>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132
