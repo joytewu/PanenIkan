@@ -1,9 +1,8 @@
-<<<<<<< HEAD
 
 <?php
 
-require __DIR__ . '/includes/bootstrap.php';
-require __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/bootstrap.php';
+require_once __DIR__ . '/includes/layout.php';
 
 $error = '';
 
@@ -62,10 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Validasi tanggal
             $date = DateTime::createFromFormat('!Y-m-d', $tanggal);
 
-            if (
-                !$date ||
-                $date->format('Y-m-d') !== $tanggal
-            ) {
+            if (!$date || $date->format('Y-m-d') !== $tanggal) {
                 throw new Exception('Tanggal panen tidak valid.');
             }
 
@@ -208,11 +204,9 @@ render_header('Data Panen', 'panen', flash_message(), $error);
 
 ?>
 
-<!-- Form Tambah dan Edit Data Panen -->
 <section class="panel">
 
     <div class="panel-head">
-
         <div>
             <h2>
                 <?= $edit ? 'Edit Data Panen' : 'Tambah Data Panen' ?>
@@ -222,27 +216,20 @@ render_header('Data Panen', 'panen', flash_message(), $error);
                 Isi rincian hasil panen di bawah ini.
             </div>
         </div>
-
     </div>
 
     <?php if (!$jenisOptions || !$kolamOptions): ?>
-
         <div class="error">
             Tambahkan setidaknya satu jenis ikan dan satu kolam
             terlebih dahulu sebelum mencatat panen.
         </div>
-
     <?php endif; ?>
 
     <form class="fields" method="post">
 
         <?= csrf_field() ?>
 
-        <input
-            type="hidden"
-            name="action"
-            value="simpan_panen"
-        >
+        <input type="hidden" name="action" value="simpan_panen">
 
         <input
             type="hidden"
@@ -252,7 +239,6 @@ render_header('Data Panen', 'panen', flash_message(), $error);
 
         <label>
             Tanggal Panen
-
             <input
                 type="date"
                 name="tanggal"
@@ -263,49 +249,40 @@ render_header('Data Panen', 'panen', flash_message(), $error);
 
         <label>
             Jenis Ikan
-
             <select name="jenis_ikan_id" required>
                 <option value="">Pilih jenis ikan</option>
 
                 <?php foreach ($jenisOptions as $j): ?>
-
                     <option
                         value="<?= (int) $j['id'] ?>"
                         <?= (string) ($edit['jenis_ikan_id'] ?? '') === (string) $j['id'] ? 'selected' : '' ?>
                     >
                         <?= e($j['nama_ikan']) ?>
                     </option>
-
                 <?php endforeach; ?>
 
             </select>
-
         </label>
 
         <label>
             Kolam
-
             <select name="kolam_id" required>
                 <option value="">Pilih kolam</option>
 
                 <?php foreach ($kolamOptions as $k): ?>
-
                     <option
                         value="<?= (int) $k['id'] ?>"
                         <?= (string) ($edit['kolam_id'] ?? '') === (string) $k['id'] ? 'selected' : '' ?>
                     >
                         <?= e($k['nama_kolam']) ?>
                     </option>
-
                 <?php endforeach; ?>
 
             </select>
-
         </label>
 
         <label>
             Jumlah Ikan (ekor)
-
             <input
                 type="number"
                 name="jumlah_ekor"
@@ -318,7 +295,6 @@ render_header('Data Panen', 'panen', flash_message(), $error);
 
         <label>
             Berat Total (kg)
-
             <input
                 type="number"
                 name="berat_kg"
@@ -341,11 +317,9 @@ render_header('Data Panen', 'panen', flash_message(), $error);
             </button>
 
             <?php if ($edit): ?>
-
                 <a class="btn light" href="panen.php">
                     Batal Edit
                 </a>
-
             <?php endif; ?>
 
         </div>
@@ -354,11 +328,9 @@ render_header('Data Panen', 'panen', flash_message(), $error);
 
 </section>
 
-<!-- Daftar Hasil Panen -->
 <section class="panel">
 
     <div class="panel-head">
-
         <div>
             <h2>Daftar Hasil Panen</h2>
 
@@ -366,7 +338,6 @@ render_header('Data Panen', 'panen', flash_message(), $error);
                 <?= count($panenRows) ?> catatan ditampilkan.
             </div>
         </div>
-
     </div>
 
     <div class="table-wrap">
@@ -387,30 +358,21 @@ render_header('Data Panen', 'panen', flash_message(), $error);
             <tbody>
 
                 <?php if (!$panenRows): ?>
-
                     <tr>
                         <td colspan="6" class="empty">
                             Belum ada data panen.
                         </td>
                     </tr>
-
                 <?php else: ?>
 
                     <?php foreach ($panenRows as $r): ?>
-
                         <tr>
 
-                            <td>
-                                <?= e($r['tanggal']) ?>
-                            </td>
+                            <td><?= e($r['tanggal']) ?></td>
 
-                            <td>
-                                <?= e($r['nama_ikan']) ?>
-                            </td>
+                            <td><?= e($r['nama_ikan']) ?></td>
 
-                            <td>
-                                <?= e($r['nama_kolam']) ?>
-                            </td>
+                            <td><?= e($r['nama_kolam']) ?></td>
 
                             <td>
                                 <?= number_format((int) $r['jumlah_ekor']) ?>
@@ -423,7 +385,6 @@ render_header('Data Panen', 'panen', flash_message(), $error);
                             </td>
 
                             <td>
-
                                 <div class="actions">
 
                                     <a
@@ -453,21 +414,16 @@ render_header('Data Panen', 'panen', flash_message(), $error);
                                             value="<?= (int) $r['id'] ?>"
                                         >
 
-                                        <button
-                                            class="btn red small"
-                                            type="submit"
-                                        >
+                                        <button class="btn red small" type="submit">
                                             Hapus
                                         </button>
 
                                     </form>
 
                                 </div>
-
                             </td>
 
                         </tr>
-
                     <?php endforeach; ?>
 
                 <?php endif; ?>
@@ -481,8 +437,3 @@ render_header('Data Panen', 'panen', flash_message(), $error);
 </section>
 
 <?php render_footer(); ?>
-=======
-<?php
-header('Location: app.php?page=panen');
-exit;
->>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132
