@@ -39,28 +39,6 @@ function go($file, $status = '') {
     exit;
 }
 
-// Fungsi verifikasi CSRF
-function verify_csrf() {
-    if (
-        !isset($_SESSION['csrf_token']) ||
-        !hash_equals(
-            $_SESSION['csrf_token'],
-            $_POST['csrf_token'] ?? ''
-        )
-    ) {
-        throw new Exception(
-            'Token keamanan tidak valid. Muat ulang halaman.'
-        );
-    }
-}
-
-// Fungsi membuat input CSRF
-function csrf_field() {
-    return '<input type="hidden" name="csrf_token" value="' .
-        e($_SESSION['csrf_token']) .
-        '">';
-}
-
 // Pesan notifikasi
 function flash_message() {
     $messages = [
