@@ -6,7 +6,7 @@ define('APP_VERSION', '1.0.0');
 
 define('APP_ENV', 'production');
 
-define('APP_URL', 'http://localhost/PanenIkan');
+define('APP_URL', 'https://www.devps.online');
 
 define('APP_TIMEZONE', 'Asia/Makassar');
 
