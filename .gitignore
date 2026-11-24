@@ -1,37 +1,30 @@
 
-<<<<<<< HEAD
-# File konfigurasi lokal
+# Local environment and secrets
 .env
 .env.*
+!.env.example
+config/database.local.php
+config/secrets.php
+db.php
 
-# File log aplikasi
+# Runtime logs and backups
 storage/logs/*
 !storage/logs/.gitkeep
-
-# File backup database
 storage/backups/*
 !storage/backups/.gitkeep
 
-# File sementara
+# Temporary files
 *.tmp
 *.log
 *.bak
 
-# Cache
+# Cache and editor
 .cache/
 tmp/
-
-# Editor
 .vscode/
 .idea/
-
-# Sistem operasi
 .DS_Store
 Thumbs.db
 
-# Dependency
+# Dependencies
 /vendor/
-=======
-# File konfigurasi database rahasia
-db.php
->>>>>>> 4197540e5e8fce389b5fc2d8f25bd2146863a132

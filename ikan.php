@@ -40,6 +40,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param('ii', $id, $userId);
             $stmt->execute();
 
+            app_log(
+                'Jenis ikan dihapus.',
+                'INFO',
+                'admin.data.delete',
+                ['entity' => 'jenis_ikan', 'record_id' => $id]
+            );
+
             go('ikan.php', 'hapus');
         }
 
@@ -69,6 +76,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->bind_param('sii', $nama, $id, $userId);
                 $stmt->execute();
 
+                app_log(
+                    'Jenis ikan diperbarui.',
+                    'INFO',
+                    'admin.data.update',
+                    ['entity' => 'jenis_ikan', 'record_id' => $id]
+                );
+
                 go('ikan.php', 'edit');
             }
 
@@ -80,6 +94,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $stmt->bind_param('is', $userId, $nama);
             $stmt->execute();
+
+            app_log(
+                'Jenis ikan ditambahkan.',
+                'INFO',
+                'admin.data.create',
+                [
+                    'entity' => 'jenis_ikan',
+                    'record_id' => (int) $conn->insert_id,
+                ]
+            );
 
             go('ikan.php', 'tambah');
         }

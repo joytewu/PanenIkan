@@ -47,6 +47,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param('ii', $id, $userId);
             $stmt->execute();
 
+            app_log(
+                'Data panen dihapus.',
+                'INFO',
+                'admin.data.delete',
+                ['entity' => 'panen', 'record_id' => $id]
+            );
+
             $photoFilename = $record['foto_filename'] ?? null;
 
             if (
@@ -221,6 +228,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $stmt->execute();
 
+                app_log(
+                    'Data panen diperbarui.',
+                    'INFO',
+                    'admin.data.update',
+                    [
+                        'entity' => 'panen',
+                        'record_id' => $id,
+                        'photo_updated' => $stagedPhoto !== null,
+                    ]
+                );
+
                 if ($stagedPhoto !== null) {
                     $replacementPhoto = $stagedPhoto;
                     $stagedPhoto = null;
@@ -281,6 +299,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $stmt->execute();
+
+            app_log(
+                'Data panen ditambahkan.',
+                'INFO',
+                'admin.data.create',
+                [
+                    'entity' => 'panen',
+                    'record_id' => (int) $conn->insert_id,
+                    'photo_added' => $stagedPhoto !== null,
+                ]
+            );
 
             $stagedPhoto = null;
 

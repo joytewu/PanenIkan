@@ -1,0 +1,3 @@
+PANENIKAN_AI_ENABLED=1
+PANENIKAN_AI_MODEL=qwen2.5:0.5b
+*/5 * * * * www-data /usr/bin/php /var/www/html/scripts/monitor_logs.php >/dev/null 2>&1

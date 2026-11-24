@@ -22,6 +22,34 @@ if (!in_array($method, ['GET', 'HEAD', 'POST'], true)) {
     exit('Metode tidak diizinkan.');
 }
 
+$requestContext = [
+    'route' => basename($_SERVER['SCRIPT_NAME'] ?? 'unknown'),
+    'method' => $method,
+];
+
+if ($method === 'POST') {
+    $submittedAction = $_POST['action'] ?? null;
+    $knownActions = [
+        'simpan_panen',
+        'hapus_panen',
+        'simpan_ikan',
+        'hapus_ikan',
+        'simpan_kolam',
+        'hapus_kolam',
+    ];
+    $requestContext['action'] = is_string($submittedAction) &&
+        in_array($submittedAction, $knownActions, true)
+            ? $submittedAction
+            : 'unknown';
+}
+
+app_log(
+    'Administrator mengakses rute aplikasi.',
+    'INFO',
+    'admin.request',
+    $requestContext
+);
+
 require_once __DIR__ . '/../config/database.php';
 
 // Fungsi keamanan output

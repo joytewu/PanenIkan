@@ -46,6 +46,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param('ii', $id, $userId);
             $stmt->execute();
 
+            app_log(
+                'Data kolam dihapus.',
+                'INFO',
+                'admin.data.delete',
+                ['entity' => 'kolam', 'record_id' => $id]
+            );
+
             go('kolam.php', 'hapus');
         }
 
@@ -99,6 +106,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $stmt->execute();
 
+                app_log(
+                    'Data kolam diperbarui.',
+                    'INFO',
+                    'admin.data.update',
+                    ['entity' => 'kolam', 'record_id' => $id]
+                );
+
                 go('kolam.php', 'edit');
             }
 
@@ -124,6 +138,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $stmt->execute();
+
+            app_log(
+                'Data kolam ditambahkan.',
+                'INFO',
+                'admin.data.create',
+                [
+                    'entity' => 'kolam',
+                    'record_id' => (int) $conn->insert_id,
+                ]
+            );
 
             go('kolam.php', 'tambah');
         }

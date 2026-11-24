@@ -24,7 +24,11 @@ try {
 
 // Mencatat aktivitas logout
 if (!empty($_SESSION['user_id'])) {
-    app_log('Pengguna melakukan logout.');
+    app_log(
+        'Administrator melakukan logout.',
+        'INFO',
+        'auth.logout.success'
+    );
 }
 
 // Menghapus seluruh data session

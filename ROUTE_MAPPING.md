@@ -62,7 +62,8 @@ image of at most 5 MB per harvest record. The original client filename is never
 used. Apply `database/migrations/20261124_panen_photo_upload.sql` once before
 deploying photo-enabled code. Configure PHP with `upload_max_filesize=5M` and
 `post_max_size=6M` and enable the `fileinfo` extension so the application-level
-limit and MIME validation can run.
+limit and MIME validation can run. The PHP `mbstring` extension is also
+required for UTF-8 input-length validation.
 
 The application uses procedural route handlers with a focused
 `AccessControl` class for authorization. Its entry points are `public`; denial
@@ -73,3 +74,63 @@ helper functions remain as compatibility wrappers around the class.
 Apache must have `AllowOverride` enabled for the `.htaccess` protections to
 take effect. The PHP role and login checks remain enforced by the application
 independently of those directory rules.
+
+## F/G security configuration
+
+The application reads `PANENIKAN_ENV`, `PANENIKAN_URL`, and `PANENIKAN_DB_*`
+values from process environment or from
+`/var/www/panenikan-private/config.php` on the production server. The external
+file must return an array and must not be committed. It should define
+`PANENIKAN_ENV`, `PANENIKAN_URL`, and `PANENIKAN_DB_PASSWORD`; the database
+host, user, and name default to `localhost`, `panenikan_app`, and `panenikan`.
+Production URLs must use HTTPS. For local development, set
+`PANENIKAN_ENV=local` and `PANENIKAN_URL` to the local application URL; only
+local mode permits an HTTP session cookie. The root `.htaccess` redirects
+non-local HTTP/IP requests to `https://www.devps.online`; ensure Apache has
+`mod_rewrite` and `AllowOverride` enabled.
+
+Example production configuration (replace the password placeholder on the
+server, never in the repository):
+
+```php
+<?php
+return [
+    'PANENIKAN_ENV' => 'production',
+    'PANENIKAN_URL' => 'https://www.devps.online',
+    'PANENIKAN_DB_HOST' => 'localhost',
+    'PANENIKAN_DB_USER' => 'panenikan_app',
+    'PANENIKAN_DB_PASSWORD' => 'replace-on-server',
+    'PANENIKAN_DB_NAME' => 'panenikan',
+    'PANENIKAN_AI_ENABLED' => '1',
+    'PANENIKAN_AI_MODEL' => 'qwen2.5:0.5b',
+];
+```
+
+Successful login/logout, failed login attempts, protected administrator
+requests, authorization denials, and CRUD changes are written as structured
+JSON logs outside the document root at
+`/var/www/panenikan-private/logs`. Provision the directory for the PHP worker:
+
+```sh
+sudo install -d -o root -g www-data -m 0750 /var/www/panenikan-private
+sudo install -d -o www-data -g www-data -m 0750 /var/www/panenikan-private/logs
+sudo install -d -o www-data -g www-data -m 0750 /var/www/panenikan-private/uploads/panen
+```
+
+Create `/var/www/panenikan-private/config.php` with the example settings and
+restrict it using `sudo chown root:www-data /var/www/panenikan-private/config.php`
+and `sudo chmod 0640 /var/www/panenikan-private/config.php`.
+`storage/.htaccess` also blocks access to old log/backup files that may remain
+under the document root. Run `scripts/check_password_hashes.php` from the CLI
+after configuring the database; it reports only counts of bcrypt, Argon2, and
+other/unsupported password values, never the hashes themselves.
+
+Install `scripts/panenikan-log-monitor.cron` as
+`/etc/cron.d/panenikan-log-monitor` to run the rule-based monitor every five
+minutes. Alerts are written to the system log and can be inspected with
+`journalctl -t panenikan-monitor`. The optional G6 analysis uses Ollama only at
+`127.0.0.1:11434`; it is triggered by rule alerts and receives aggregate event
+counts only, not usernames, IP addresses, passwords, tokens, or raw logs.
+Install and bind Ollama to loopback, and pull the model configured in the cron
+file before enabling the scheduled monitor. The model's output is advisory only and
+does not block accounts or execute commands.

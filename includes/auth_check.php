@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/logger.php';
 app_deny_direct_access(__FILE__);
 
 final class AccessControl {
@@ -68,6 +69,16 @@ final class AccessControl {
     }
 
     private static function denyAccess() {
+
+        app_log(
+            'Administrator mengakses rute yang tidak diizinkan.',
+            'WARNING',
+            'authz.denied',
+            [
+                'route' => basename($_SERVER['SCRIPT_NAME'] ?? 'unknown'),
+                'method' => $_SERVER['REQUEST_METHOD'] ?? 'unknown',
+            ]
+        );
 
         http_response_code(403);
         exit('Akses ditolak.');

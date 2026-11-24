@@ -19,6 +19,7 @@ require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/logger.php';
 
 $error = '';
+$loginUsername = null;
 
 if (has_role(APP_ROLE_ADMIN)) {
     header('Location: ' . APP_URL . '/dashboard.php');
@@ -38,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             50,
             true
         );
+        $loginUsername = $username;
         $password = $_POST['password'] ?? null;
 
         if (
@@ -45,6 +47,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $password === '' ||
             strlen($password) > 4096
         ) {
+            throw new InvalidArgumentException('Password tidak valid.');
+        }
+
+        $passwordAlgorithm = defined('PASSWORD_ARGON2ID')
+            ? PASSWORD_ARGON2ID
+            : PASSWORD_BCRYPT;
+
+        if ($passwordAlgorithm === PASSWORD_BCRYPT && strlen($password) > 72) {
             throw new InvalidArgumentException('Password tidak valid.');
         }
 
@@ -60,12 +70,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $user = $stmt->get_result()->fetch_assoc();
 
-        if (!$user || !password_verify($password, $user['password'])) {
+        $storedPasswordHash = is_array($user) &&
+            is_string($user['password'] ?? null)
+                ? $user['password']
+                : '';
+        $passwordHashInfo = password_get_info($storedPasswordHash);
+        $passwordHashAlgorithm = $passwordHashInfo['algoName'] ?? 'unknown';
+        $isSupportedPasswordHash = in_array(
+            $passwordHashAlgorithm,
+            ['bcrypt', 'argon2i', 'argon2id'],
+            true
+        );
 
-            app_log('Percobaan login gagal: ' . $username, 'WARNING');
-
+        if (
+            !$user ||
+            !$isSupportedPasswordHash ||
+            !password_verify($password, $storedPasswordHash)
+        ) {
             throw new Exception('Username atau password salah.');
+        }
 
+        if (password_needs_rehash($storedPasswordHash, $passwordAlgorithm)) {
+            $updatedPasswordHash = password_hash(
+                $password,
+                $passwordAlgorithm
+            );
+
+            if (!is_string($updatedPasswordHash)) {
+                throw new RuntimeException('Password gagal diperbarui dengan aman.');
+            }
+
+            $updatePassword = $conn->prepare(
+                'UPDATE users
+                 SET password = ?
+                 WHERE id = ?'
+            );
+            $updatePassword->bind_param(
+                'si',
+                $updatedPasswordHash,
+                $user['id']
+            );
+            $updatePassword->execute();
         }
 
         // Mengamankan session setelah login berhasil
@@ -84,18 +129,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Membuat token CSRF baru setelah login
         unset($_SESSION['csrf_token']);
 
-        app_log('Pengguna berhasil login.');
+        app_log(
+            'Administrator berhasil login.',
+            'INFO',
+            'auth.login.success'
+        );
 
         header('Location: ' . APP_URL . '/dashboard.php');
         exit;
 
     } catch (mysqli_sql_exception $e) {
 
-        app_log($e->getMessage(), 'ERROR');
+        app_log(
+            'Permintaan login gagal karena gangguan database.',
+            'ERROR',
+            'auth.login.error'
+        );
         $error = 'Terjadi kesalahan database.';
 
     } catch (Throwable $e) {
 
+        app_log(
+            'Permintaan login ditolak.',
+            'WARNING',
+            'auth.login.failed',
+            ['username' => $loginUsername]
+        );
         $error = $e->getMessage();
 
     }
