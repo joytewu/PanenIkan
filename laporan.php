@@ -3,9 +3,11 @@
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/includes/layout.php';
 
+$userId = current_user_id();
+
 // Mengambil pilihan jenis ikan dan kolam
-$jenisOptions = get_jenis_options($conn);
-$kolamOptions = get_kolam_options($conn);
+$jenisOptions = get_jenis_options($conn, $userId);
+$kolamOptions = get_kolam_options($conn, $userId);
 
 // Mengambil filter tanggal
 $filterTanggal = trim($_GET['tanggal'] ?? '');
@@ -42,13 +44,17 @@ $sql = '
         p.jumlah_ekor,
         p.berat_kg
     FROM panen p
-    JOIN jenis_ikan j ON p.jenis_ikan_id = j.id
-    JOIN kolam k ON p.kolam_id = k.id
-    WHERE 1 = 1
+    JOIN jenis_ikan j
+       ON p.jenis_ikan_id = j.id
+       AND (j.owner_user_id = ? OR j.owner_user_id IS NULL)
+    JOIN kolam k
+       ON p.kolam_id = k.id
+       AND (k.owner_user_id = ? OR k.owner_user_id IS NULL)
+    WHERE (p.owner_user_id = ? OR p.owner_user_id IS NULL)
 ';
 
-$types = '';
-$params = [];
+$types = 'iii';
+$params = [$userId, $userId, $userId];
 
 // Filter berdasarkan tanggal
 if ($filterTanggal !== '') {

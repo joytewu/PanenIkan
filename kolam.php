@@ -4,6 +4,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 require_once __DIR__ . '/includes/layout.php';
 
 $error = '';
+$userId = current_user_id();
 
 // Memeriksa apakah kolom lokasi tersedia
 $hasLokasi = hasColumn($conn, 'kolam', 'lokasi');
@@ -25,11 +26,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('ID kolam tidak valid.');
             }
 
+            if (!fetch_by_id($conn, 'kolam', $id, $userId)) {
+                throw new Exception('Data kolam tidak ditemukan atau akses ditolak.');
+            }
+
             $stmt = $conn->prepare(
-                'DELETE FROM kolam WHERE id = ?'
+                'DELETE FROM kolam
+                 WHERE id = ?
+                 AND (owner_user_id = ? OR owner_user_id IS NULL)'
             );
 
-            $stmt->bind_param('i', $id);
+            $stmt->bind_param('ii', $id, $userId);
             $stmt->execute();
 
             go('kolam.php', 'hapus');
@@ -56,25 +63,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Mengedit data kolam
             if ($id > 0) {
 
+                if (!fetch_by_id($conn, 'kolam', $id, $userId)) {
+                    throw new Exception('Data kolam tidak ditemukan atau akses ditolak.');
+                }
+
                 if ($hasLokasi) {
 
                     $stmt = $conn->prepare(
                         'UPDATE kolam
                          SET nama_kolam = ?, lokasi = ?
-                         WHERE id = ?'
+                         WHERE id = ?
+                         AND (owner_user_id = ? OR owner_user_id IS NULL)'
                     );
 
-                    $stmt->bind_param('ssi', $nama, $lokasi, $id);
+                    $stmt->bind_param('ssii', $nama, $lokasi, $id, $userId);
 
                 } else {
 
                     $stmt = $conn->prepare(
                         'UPDATE kolam
                          SET nama_kolam = ?
-                         WHERE id = ?'
+                         WHERE id = ?
+                         AND (owner_user_id = ? OR owner_user_id IS NULL)'
                     );
 
-                    $stmt->bind_param('si', $nama, $id);
+                    $stmt->bind_param('sii', $nama, $id, $userId);
 
                 }
 
@@ -87,20 +100,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($hasLokasi) {
 
                 $stmt = $conn->prepare(
-                    'INSERT INTO kolam (nama_kolam, lokasi)
-                     VALUES (?, ?)'
+                    'INSERT INTO kolam (owner_user_id, nama_kolam, lokasi)
+                     VALUES (?, ?, ?)'
                 );
 
-                $stmt->bind_param('ss', $nama, $lokasi);
+                $stmt->bind_param('iss', $userId, $nama, $lokasi);
 
             } else {
 
                 $stmt = $conn->prepare(
-                    'INSERT INTO kolam (nama_kolam)
-                     VALUES (?)'
+                    'INSERT INTO kolam (owner_user_id, nama_kolam)
+                     VALUES (?, ?)'
                 );
 
-                $stmt->bind_param('s', $nama);
+                $stmt->bind_param('is', $userId, $nama);
 
             }
 
@@ -126,13 +139,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $editId = filter_input(INPUT_GET, 'edit', FILTER_VALIDATE_INT) ?: 0;
 
 $edit = $editId > 0
-    ? fetch_by_id($conn, 'kolam', $editId)
+    ? fetch_by_id($conn, 'kolam', $editId, $userId)
     : null;
 
 // Mengambil daftar kolam
-$kolamRows = $conn->query(
-    'SELECT * FROM kolam ORDER BY nama_kolam'
-)->fetch_all(MYSQLI_ASSOC);
+$stmt = $conn->prepare(
+    'SELECT *
+     FROM kolam
+     WHERE owner_user_id = ? OR owner_user_id IS NULL
+     ORDER BY nama_kolam'
+);
+
+$stmt->bind_param('i', $userId);
+$stmt->execute();
+
+$kolamRows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 // Menampilkan header
 render_header('Data Kolam', 'kolam', flash_message(), $error);

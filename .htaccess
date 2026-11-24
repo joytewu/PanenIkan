@@ -1,0 +1,10 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule "(^|/)\." - [F]
+</IfModule>
+
+<FilesMatch "^(?:\.|.*\.(?:md|sql|sh)$|layout\.php$)">
+    Require all denied
+</FilesMatch>

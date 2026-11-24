@@ -1,24 +1,63 @@
-CREATE DATABASE IF NOT EXISTS panenikan CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS panenikan
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
 USE panenikan;
 
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nama VARCHAR(100) NOT NULL,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS jenis_ikan (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  nama_ikan VARCHAR(100) NOT NULL UNIQUE
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    owner_user_id INT NULL,
+    nama_ikan VARCHAR(100) NOT NULL,
+    CONSTRAINT fk_jenis_ikan_owner
+        FOREIGN KEY (owner_user_id)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    UNIQUE KEY uq_jenis_ikan_owner_name (owner_user_id, nama_ikan)
 );
 
 CREATE TABLE IF NOT EXISTS kolam (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  nama_kolam VARCHAR(100) NOT NULL UNIQUE,
-  lokasi VARCHAR(150) NULL
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    owner_user_id INT NULL,
+    nama_kolam VARCHAR(100) NOT NULL,
+    lokasi VARCHAR(255) DEFAULT NULL,
+    CONSTRAINT fk_kolam_owner
+        FOREIGN KEY (owner_user_id)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    UNIQUE KEY uq_kolam_owner_name (owner_user_id, nama_kolam)
 );
 
 CREATE TABLE IF NOT EXISTS panen (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  tanggal DATE NOT NULL,
-  jenis_ikan_id INT NOT NULL,
-  kolam_id INT NOT NULL,
-  jumlah_ekor INT NOT NULL,
-  berat_kg DECIMAL(10,2) NOT NULL,
-  FOREIGN KEY (jenis_ikan_id) REFERENCES jenis_ikan(id),
-  FOREIGN KEY (kolam_id) REFERENCES kolam(id)
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    owner_user_id INT NULL,
+    tanggal DATE NOT NULL,
+    jenis_ikan_id INT NOT NULL,
+    kolam_id INT NOT NULL,
+    jumlah_ekor INT NOT NULL,
+    berat_kg DECIMAL(10,2) NOT NULL,
+    CONSTRAINT fk_panen_owner
+        FOREIGN KEY (owner_user_id)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_panen_jenis
+        FOREIGN KEY (jenis_ikan_id)
+        REFERENCES jenis_ikan(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_panen_kolam
+        FOREIGN KEY (kolam_id)
+        REFERENCES kolam(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
 );

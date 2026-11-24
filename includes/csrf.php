@@ -1,5 +1,8 @@
 <?php
 
+require_once __DIR__ . '/../config/app.php';
+app_deny_direct_access(__FILE__);
+
 function generate_csrf_token() {
 
     if (empty($_SESSION['csrf_token'])) {

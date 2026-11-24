@@ -3,37 +3,57 @@
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/includes/layout.php';
 
+$userId = current_user_id();
+
 // Mengambil statistik dashboard
-$totalPanen = $conn->query(
-    'SELECT COUNT(*) AS total FROM panen'
-)->fetch_assoc()['total'];
+$stmt = $conn->prepare(
+    'SELECT
+        COUNT(*) AS total_panen,
+        COALESCE(SUM(jumlah_ekor), 0) AS total_ekor,
+        COALESCE(SUM(berat_kg), 0) AS total_berat
+     FROM panen
+     WHERE owner_user_id = ? OR owner_user_id IS NULL'
+);
 
-$totalEkor = $conn->query(
-    'SELECT COALESCE(SUM(jumlah_ekor), 0) AS total FROM panen'
-)->fetch_assoc()['total'];
+$stmt->bind_param('i', $userId);
+$stmt->execute();
+$harvestStats = $stmt->get_result()->fetch_assoc();
 
-$totalBerat = $conn->query(
-    'SELECT COALESCE(SUM(berat_kg), 0) AS total FROM panen'
-)->fetch_assoc()['total'];
+$totalPanen = $harvestStats['total_panen'];
+$totalEkor = $harvestStats['total_ekor'];
+$totalBerat = $harvestStats['total_berat'];
 
-$totalKolam = $conn->query(
-    'SELECT COUNT(*) AS total FROM kolam'
-)->fetch_assoc()['total'];
+$stmt = $conn->prepare(
+    'SELECT COUNT(*) AS total
+     FROM kolam
+     WHERE owner_user_id = ? OR owner_user_id IS NULL'
+);
+
+$stmt->bind_param('i', $userId);
+$stmt->execute();
+$totalKolam = $stmt->get_result()->fetch_assoc()['total'];
 
 // Ringkasan produksi berdasarkan jenis ikan
-$summary = $conn->query(
+$stmt = $conn->prepare(
     'SELECT
         j.nama_ikan,
         COALESCE(SUM(p.jumlah_ekor), 0) AS ekor,
         COALESCE(SUM(p.berat_kg), 0) AS berat
      FROM jenis_ikan j
-     LEFT JOIN panen p ON p.jenis_ikan_id = j.id
+     LEFT JOIN panen p
+        ON p.jenis_ikan_id = j.id
+        AND (p.owner_user_id = ? OR p.owner_user_id IS NULL)
+     WHERE j.owner_user_id = ? OR j.owner_user_id IS NULL
      GROUP BY j.id, j.nama_ikan
      ORDER BY j.nama_ikan'
-)->fetch_all(MYSQLI_ASSOC);
+);
+
+$stmt->bind_param('ii', $userId, $userId);
+$stmt->execute();
+$summary = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 // Mengambil enam catatan panen terbaru
-$recentRows = $conn->query(
+$stmt = $conn->prepare(
     'SELECT
         p.tanggal,
         j.nama_ikan,
@@ -41,11 +61,20 @@ $recentRows = $conn->query(
         p.jumlah_ekor,
         p.berat_kg
      FROM panen p
-     JOIN jenis_ikan j ON p.jenis_ikan_id = j.id
-     JOIN kolam k ON p.kolam_id = k.id
+     JOIN jenis_ikan j
+        ON p.jenis_ikan_id = j.id
+        AND (j.owner_user_id = ? OR j.owner_user_id IS NULL)
+     JOIN kolam k
+        ON p.kolam_id = k.id
+        AND (k.owner_user_id = ? OR k.owner_user_id IS NULL)
+     WHERE p.owner_user_id = ? OR p.owner_user_id IS NULL
      ORDER BY p.tanggal DESC, p.id DESC
      LIMIT 6'
-)->fetch_all(MYSQLI_ASSOC);
+);
+
+$stmt->bind_param('iii', $userId, $userId, $userId);
+$stmt->execute();
+$recentRows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 // Menampilkan header
 render_header('Dashboard', 'dashboard', flash_message());

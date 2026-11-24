@@ -1,5 +1,8 @@
 <?php
 
+require_once __DIR__ . '/app.php';
+app_deny_direct_access(__FILE__);
+
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 try {

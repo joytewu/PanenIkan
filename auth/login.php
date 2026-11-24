@@ -3,13 +3,23 @@
 require_once __DIR__ . '/../config/app.php';
 app_start_session();
 
+require_once __DIR__ . '/../includes/auth_check.php';
+
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+if (!in_array($method, ['GET', 'HEAD', 'POST'], true)) {
+    header('Allow: GET, HEAD, POST');
+    http_response_code(405);
+    exit('Metode tidak diizinkan.');
+}
+
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/logger.php';
 
 $error = '';
 
-if (!empty($_SESSION['user_id'])) {
+if (has_role(APP_ROLE_ADMIN)) {
     header('Location: ' . APP_URL . '/dashboard.php');
     exit;
 }
@@ -57,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['nama'] = $user['nama'];
+        $_SESSION['role'] = APP_ROLE_ADMIN;
         $_SESSION['last_activity'] = time();
 
         // Membuat token CSRF baru setelah login

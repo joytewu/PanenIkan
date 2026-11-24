@@ -1,5 +1,8 @@
 <?php
 
+require_once __DIR__ . '/../config/app.php';
+app_deny_direct_access(__FILE__);
+
 function app_log($message, $level = 'INFO') {
 
     $logDirectory = __DIR__ . '/../storage/logs/';

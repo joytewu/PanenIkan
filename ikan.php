@@ -4,6 +4,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 require_once __DIR__ . '/includes/layout.php';
 
 $error = '';
+$userId = current_user_id();
 
 // Memproses formulir
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -19,11 +20,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('ID jenis ikan tidak valid.');
             }
 
+            if (!fetch_by_id($conn, 'jenis_ikan', $id, $userId)) {
+                throw new Exception('Jenis ikan tidak ditemukan atau akses ditolak.');
+            }
+
             $stmt = $conn->prepare(
-                'DELETE FROM jenis_ikan WHERE id = ?'
+                'DELETE FROM jenis_ikan
+                 WHERE id = ?
+                 AND (owner_user_id = ? OR owner_user_id IS NULL)'
             );
 
-            $stmt->bind_param('i', $id);
+            $stmt->bind_param('ii', $id, $userId);
             $stmt->execute();
 
             go('ikan.php', 'hapus');
@@ -43,13 +50,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Mengedit jenis ikan
             if ($id > 0) {
+                if (!fetch_by_id($conn, 'jenis_ikan', $id, $userId)) {
+                    throw new Exception('Jenis ikan tidak ditemukan atau akses ditolak.');
+                }
+
                 $stmt = $conn->prepare(
                     'UPDATE jenis_ikan
                      SET nama_ikan = ?
-                     WHERE id = ?'
+                     WHERE id = ?
+                     AND (owner_user_id = ? OR owner_user_id IS NULL)'
                 );
 
-                $stmt->bind_param('si', $nama, $id);
+                $stmt->bind_param('sii', $nama, $id, $userId);
                 $stmt->execute();
 
                 go('ikan.php', 'edit');
@@ -57,11 +69,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Menambahkan jenis ikan
             $stmt = $conn->prepare(
-                'INSERT INTO jenis_ikan (nama_ikan)
-                 VALUES (?)'
+                'INSERT INTO jenis_ikan (owner_user_id, nama_ikan)
+                 VALUES (?, ?)'
             );
 
-            $stmt->bind_param('s', $nama);
+            $stmt->bind_param('is', $userId, $nama);
             $stmt->execute();
 
             go('ikan.php', 'tambah');
@@ -81,11 +93,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $editId = filter_input(INPUT_GET, 'edit', FILTER_VALIDATE_INT) ?: 0;
 
 $edit = $editId > 0
-    ? fetch_by_id($conn, 'jenis_ikan', $editId)
+    ? fetch_by_id($conn, 'jenis_ikan', $editId, $userId)
     : null;
 
 // Mengambil daftar jenis ikan
-$jenisRows = get_jenis_options($conn);
+$jenisRows = get_jenis_options($conn, $userId);
 
 // Menampilkan halaman
 render_header('Jenis Ikan', 'ikan', flash_message(), $error);

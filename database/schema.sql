@@ -17,24 +17,45 @@ CREATE TABLE IF NOT EXISTS users (
 -- Tabel jenis ikan
 CREATE TABLE IF NOT EXISTS jenis_ikan (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nama_ikan VARCHAR(100) NOT NULL UNIQUE
+    owner_user_id INT NULL,
+    nama_ikan VARCHAR(100) NOT NULL,
+    CONSTRAINT fk_jenis_ikan_owner
+        FOREIGN KEY (owner_user_id)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    UNIQUE KEY uq_jenis_ikan_owner_name (owner_user_id, nama_ikan)
 );
 
 -- Tabel kolam
 CREATE TABLE IF NOT EXISTS kolam (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nama_kolam VARCHAR(100) NOT NULL UNIQUE,
-    lokasi VARCHAR(255) DEFAULT NULL
+    owner_user_id INT NULL,
+    nama_kolam VARCHAR(100) NOT NULL,
+    lokasi VARCHAR(255) DEFAULT NULL,
+    CONSTRAINT fk_kolam_owner
+        FOREIGN KEY (owner_user_id)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    UNIQUE KEY uq_kolam_owner_name (owner_user_id, nama_kolam)
 );
 
 -- Tabel panen
 CREATE TABLE IF NOT EXISTS panen (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    owner_user_id INT NULL,
     tanggal DATE NOT NULL,
     jenis_ikan_id INT NOT NULL,
     kolam_id INT NOT NULL,
     jumlah_ekor INT NOT NULL,
     berat_kg DECIMAL(10,2) NOT NULL,
+
+    CONSTRAINT fk_panen_owner
+        FOREIGN KEY (owner_user_id)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
 
     CONSTRAINT fk_panen_jenis
         FOREIGN KEY (jenis_ikan_id)

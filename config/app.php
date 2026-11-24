@@ -2,12 +2,26 @@
 
 define('APP_NAME', 'PanenIkan');
 define('APP_VERSION', '1.0.0');
+define('APP_ROLE_ADMIN', 'admin');
 
 define('APP_ENV', 'production');
 
 define('APP_URL', 'https://www.devps.online');
 
 define('APP_TIMEZONE', 'Asia/Makassar');
+
+function app_deny_direct_access($file) {
+
+    $script = $_SERVER['SCRIPT_FILENAME'] ?? '';
+
+    if ($script !== '' && realpath($script) === realpath($file)) {
+        http_response_code(404);
+        exit;
+    }
+
+}
+
+app_deny_direct_access(__FILE__);
 
 date_default_timezone_set(APP_TIMEZONE);
 

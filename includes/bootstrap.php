@@ -2,17 +2,26 @@
 
 // Memanggil konfigurasi aplikasi dan database
 require_once __DIR__ . '/../config/app.php';
+app_deny_direct_access(__FILE__);
 app_start_session();
-
-require_once __DIR__ . '/../config/database.php';
 
 // Memanggil sistem keamanan dan autentikasi
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/auth_check.php';
 require_once __DIR__ . '/logger.php';
 
-// Memastikan pengguna sudah login
-require_login();
+// Memastikan pengguna terautentikasi dan berhak sebelum membuka database
+require_admin();
+
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+if (!in_array($method, ['GET', 'HEAD', 'POST'], true)) {
+    header('Allow: GET, HEAD, POST');
+    http_response_code(405);
+    exit('Metode tidak diizinkan.');
+}
+
+require_once __DIR__ . '/../config/database.php';
 
 // Fungsi keamanan output
 function e($value) {
@@ -79,39 +88,59 @@ function hasColumn($conn, $table, $column) {
 }
 
 // Mengambil data berdasarkan ID
-function fetch_by_id($conn, $table, $id) {
+function fetch_by_id($conn, $table, $id, $userId) {
     $allowed = ['panen', 'jenis_ikan', 'kolam'];
 
     $id = (int) $id;
+    $userId = (int) $userId;
 
-    if (!in_array($table, $allowed, true) || $id < 1) {
+    if (
+        !in_array($table, $allowed, true) ||
+        $id < 1 ||
+        $userId < 1
+    ) {
         return null;
     }
 
     $stmt = $conn->prepare(
-        "SELECT * FROM `$table` WHERE id = ?"
+        "SELECT *
+         FROM `$table`
+         WHERE id = ?
+         AND (owner_user_id = ? OR owner_user_id IS NULL)"
     );
 
-    $stmt->bind_param('i', $id);
+    $stmt->bind_param('ii', $id, $userId);
     $stmt->execute();
 
     return $stmt->get_result()->fetch_assoc();
 }
 
 // Mengambil pilihan jenis ikan
-function get_jenis_options($conn) {
-    return $conn->query(
+function get_jenis_options($conn, $userId) {
+    $stmt = $conn->prepare(
         'SELECT id, nama_ikan
          FROM jenis_ikan
+         WHERE owner_user_id = ? OR owner_user_id IS NULL
          ORDER BY nama_ikan'
-    )->fetch_all(MYSQLI_ASSOC);
+    );
+
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }
 
 // Mengambil pilihan kolam
-function get_kolam_options($conn) {
-    return $conn->query(
+function get_kolam_options($conn, $userId) {
+    $stmt = $conn->prepare(
         'SELECT id, nama_kolam
          FROM kolam
+         WHERE owner_user_id = ? OR owner_user_id IS NULL
          ORDER BY nama_kolam'
-    )->fetch_all(MYSQLI_ASSOC);
+    );
+
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }

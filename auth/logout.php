@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../config/app.php';
 app_start_session();
 
+require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/logger.php';
 
@@ -11,6 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     exit('Metode tidak diizinkan.');
 }
+
+require_login();
 
 try {
     verify_csrf();

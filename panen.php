@@ -4,6 +4,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 require_once __DIR__ . '/includes/layout.php';
 
 $error = '';
+$userId = current_user_id();
 
 // Memproses formulir
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -22,11 +23,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('ID data panen tidak valid.');
             }
 
+            if (!fetch_by_id($conn, 'panen', $id, $userId)) {
+                throw new Exception('Data panen tidak ditemukan atau akses ditolak.');
+            }
+
             $stmt = $conn->prepare(
-                'DELETE FROM panen WHERE id = ?'
+                'DELETE FROM panen
+                 WHERE id = ?
+                 AND (owner_user_id = ? OR owner_user_id IS NULL)'
             );
 
-            $stmt->bind_param('i', $id);
+            $stmt->bind_param('ii', $id, $userId);
             $stmt->execute();
 
             go('panen.php', 'hapus');
@@ -88,10 +95,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Memastikan jenis ikan tersedia
             $checkJenis = $conn->prepare(
-                'SELECT id FROM jenis_ikan WHERE id = ?'
+                'SELECT id
+                 FROM jenis_ikan
+                 WHERE id = ?
+                 AND (owner_user_id = ? OR owner_user_id IS NULL)'
             );
 
-            $checkJenis->bind_param('i', $jenis);
+            $checkJenis->bind_param('ii', $jenis, $userId);
             $checkJenis->execute();
 
             if (!$checkJenis->get_result()->fetch_assoc()) {
@@ -100,10 +110,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Memastikan kolam tersedia
             $checkKolam = $conn->prepare(
-                'SELECT id FROM kolam WHERE id = ?'
+                'SELECT id
+                 FROM kolam
+                 WHERE id = ?
+                 AND (owner_user_id = ? OR owner_user_id IS NULL)'
             );
 
-            $checkKolam->bind_param('i', $kolam);
+            $checkKolam->bind_param('ii', $kolam, $userId);
             $checkKolam->execute();
 
             if (!$checkKolam->get_result()->fetch_assoc()) {
@@ -113,6 +126,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Mengedit data panen
             if ($id > 0) {
 
+                if (!fetch_by_id($conn, 'panen', $id, $userId)) {
+                    throw new Exception('Data panen tidak ditemukan atau akses ditolak.');
+                }
+
                 $stmt = $conn->prepare(
                     'UPDATE panen
                      SET tanggal = ?,
@@ -120,17 +137,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          kolam_id = ?,
                          jumlah_ekor = ?,
                          berat_kg = ?
-                     WHERE id = ?'
+                     WHERE id = ?
+                     AND (owner_user_id = ? OR owner_user_id IS NULL)'
                 );
 
                 $stmt->bind_param(
-                    'siiidi',
+                    'siiidii',
                     $tanggal,
                     $jenis,
                     $kolam,
                     $jumlah,
                     $berat,
-                    $id
+                    $id,
+                    $userId
                 );
 
                 $stmt->execute();
@@ -141,12 +160,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Menambahkan data panen baru
             $stmt = $conn->prepare(
                 'INSERT INTO panen
-                 (tanggal, jenis_ikan_id, kolam_id, jumlah_ekor, berat_kg)
-                 VALUES (?, ?, ?, ?, ?)'
+                 (owner_user_id, tanggal, jenis_ikan_id, kolam_id, jumlah_ekor, berat_kg)
+                 VALUES (?, ?, ?, ?, ?, ?)'
             );
 
             $stmt->bind_param(
-                'siiid',
+                'isiiid',
+                $userId,
                 $tanggal,
                 $jenis,
                 $kolam,
@@ -176,15 +196,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $editId = filter_input(INPUT_GET, 'edit', FILTER_VALIDATE_INT) ?: 0;
 
 $edit = $editId > 0
-    ? fetch_by_id($conn, 'panen', $editId)
+    ? fetch_by_id($conn, 'panen', $editId, $userId)
     : null;
 
 // Mengambil pilihan jenis ikan dan kolam
-$jenisOptions = get_jenis_options($conn);
-$kolamOptions = get_kolam_options($conn);
+$jenisOptions = get_jenis_options($conn, $userId);
+$kolamOptions = get_kolam_options($conn, $userId);
 
 // Mengambil daftar hasil panen
-$panenRows = $conn->query(
+$stmt = $conn->prepare(
     'SELECT
         p.id,
         p.tanggal,
@@ -193,10 +213,20 @@ $panenRows = $conn->query(
         p.jumlah_ekor,
         p.berat_kg
      FROM panen p
-     JOIN jenis_ikan j ON p.jenis_ikan_id = j.id
-     JOIN kolam k ON p.kolam_id = k.id
+     JOIN jenis_ikan j
+         ON p.jenis_ikan_id = j.id
+         AND (j.owner_user_id = ? OR j.owner_user_id IS NULL)
+     JOIN kolam k
+         ON p.kolam_id = k.id
+         AND (k.owner_user_id = ? OR k.owner_user_id IS NULL)
+     WHERE p.owner_user_id = ? OR p.owner_user_id IS NULL
      ORDER BY p.tanggal DESC, p.id DESC'
-)->fetch_all(MYSQLI_ASSOC);
+);
+
+$stmt->bind_param('iii', $userId, $userId, $userId);
+$stmt->execute();
+
+$panenRows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 // Menampilkan header
 render_header('Data Panen', 'panen', flash_message(), $error);
