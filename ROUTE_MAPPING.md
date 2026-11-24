@@ -14,6 +14,7 @@ checks the authenticated role, and only then opens the database connection.
 | `/auth/login.php` | GET, HEAD | Displays the login form | Public |
 | `/auth/login.php` | POST | Verifies credentials and the CSRF token | Public, CSRF required |
 | `/assets/panenikan.css` | GET | Public stylesheet | Public |
+| `/assets/panenikan.js` | GET | Local delete-confirmation and report-print behavior | Public |
 
 ## Authenticated routes and handlers
 
@@ -24,6 +25,7 @@ changes are handled by POST on the same URL and require a valid CSRF token.
 |---|---|---|
 | `/dashboard.php` | GET, HEAD | Current user's and legacy-shared harvest/pond summary |
 | `/panen.php` | GET, HEAD; optional `edit` ID. POST `action=simpan_panen` or `action=hapus_panen`, optional record `id` | List, add, edit, and delete harvest records |
+| `/panen_foto.php` | GET, HEAD; required harvest `id` | Serves a stored harvest photo after authentication and ownership checks |
 | `/ikan.php` | GET, HEAD; optional `edit` ID. POST `action=simpan_ikan` or `action=hapus_ikan`, optional record `id` | List, add, edit, and delete fish types |
 | `/kolam.php` | GET, HEAD; optional `edit` ID. POST `action=simpan_kolam` or `action=hapus_kolam`, optional record `id` | List, add, edit, and delete ponds |
 | `/laporan.php` | GET, HEAD; optional `tanggal`, `jenis`, and `kolam` filters | View the shared harvest report |
@@ -42,18 +44,25 @@ this route map. Internal PHP configuration and include files also reject
 direct script requests. `/assets/` is the only static application directory
 intended to be publicly served.
 
-The current schema has a `users` table but no role column and no ownership
-columns on harvest, pond, or fish-type records. The application therefore has
-one supported role, `admin`, assigned by the server only after successful
-login. New fish types, ponds, and harvest records belong to the authenticated
-user. Existing rows are kept as shared data (`owner_user_id IS NULL`) and
-remain visible to all authorized users. Reads, edits, deletes, and harvest
-references are restricted to the current user's records or those shared legacy
-rows.
+The schema has a `users` table but no role column. The application therefore
+has one supported role, `admin`, assigned by the server only after successful
+login. Ownership columns on harvest, pond, and fish-type records let new rows
+belong to the authenticated user. Existing rows remain shared
+(`owner_user_id IS NULL`). Reads, edits, deletes, and harvest references are
+restricted to the current user's records or those shared legacy rows.
 
 Apply `database/migrations/20261124_user_data_ownership.sql` once before
 deploying the ownership-aware application code. It adds nullable ownership
 columns without changing existing row values.
+
+Harvest photos are stored outside the web document root in
+`/var/www/panenikan-private/uploads/panen` by default. The PHP worker needs
+write access to that directory; uploads are limited to one JPEG, PNG, or WebP
+image of at most 5 MB per harvest record. The original client filename is never
+used. Apply `database/migrations/20261124_panen_photo_upload.sql` once before
+deploying photo-enabled code. Configure PHP with `upload_max_filesize=5M` and
+`post_max_size=6M` and enable the `fileinfo` extension so the application-level
+limit and MIME validation can run.
 
 The application uses procedural route handlers with a focused
 `AccessControl` class for authorization. Its entry points are `public`; denial

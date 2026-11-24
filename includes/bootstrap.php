@@ -27,7 +27,7 @@ require_once __DIR__ . '/../config/database.php';
 function e($value) {
     return htmlspecialchars(
         (string) $value,
-        ENT_QUOTES,
+        ENT_QUOTES | ENT_SUBSTITUTE,
         'UTF-8'
     );
 }
@@ -52,7 +52,118 @@ function flash_message() {
         'hapus'  => 'Data berhasil dihapus.',
     ];
 
-    return $messages[$_GET['status'] ?? ''] ?? '';
+    $status = $_GET['status'] ?? '';
+
+    return is_string($status)
+        ? ($messages[$status] ?? '')
+        : '';
+}
+
+function request_text(
+    array $source,
+    string $key,
+    string $label,
+    int $maxLength,
+    bool $required = false
+): string {
+    if (!array_key_exists($key, $source)) {
+        if ($required) {
+            throw new InvalidArgumentException($label . ' wajib diisi.');
+        }
+
+        return '';
+    }
+
+    if (!is_string($source[$key])) {
+        throw new InvalidArgumentException($label . ' tidak valid.');
+    }
+
+    $value = trim($source[$key]);
+
+    if ($required && $value === '') {
+        throw new InvalidArgumentException($label . ' wajib diisi.');
+    }
+
+    if (preg_match('/[\x00-\x1F\x7F]/', $value) === 1) {
+        throw new InvalidArgumentException($label . ' berisi karakter yang tidak valid.');
+    }
+
+    if (mb_strlen($value, 'UTF-8') > $maxLength) {
+        throw new InvalidArgumentException(
+            $label . ' maksimal ' . $maxLength . ' karakter.'
+        );
+    }
+
+    return $value;
+}
+
+function request_integer(
+    array $source,
+    string $key,
+    string $label,
+    int $minimum,
+    int $maximum,
+    bool $allowEmpty = false
+): int {
+    if (!array_key_exists($key, $source)) {
+        if ($allowEmpty) {
+            return 0;
+        }
+
+        throw new InvalidArgumentException($label . ' tidak valid.');
+    }
+
+    $value = $source[$key];
+
+    if ($allowEmpty && $value === '') {
+        return 0;
+    }
+
+    if (!is_string($value) && !is_int($value)) {
+        throw new InvalidArgumentException($label . ' tidak valid.');
+    }
+
+    $validated = filter_var($value, FILTER_VALIDATE_INT);
+
+    if (
+        $validated === false ||
+        $validated < $minimum ||
+        $validated > $maximum
+    ) {
+        throw new InvalidArgumentException($label . ' tidak valid.');
+    }
+
+    return $validated;
+}
+
+function optional_input_text($value, int $maxLength): string {
+    if (!is_string($value)) {
+        return '';
+    }
+
+    $value = trim($value);
+
+    return mb_strlen($value, 'UTF-8') <= $maxLength
+        ? $value
+        : '';
+}
+
+function optional_input_integer(
+    $value,
+    int $minimum = 0,
+    int $maximum = 2147483647
+): int {
+    if ((!is_string($value) && !is_int($value)) || $value === '') {
+        return 0;
+    }
+
+    $validated = filter_var($value, FILTER_VALIDATE_INT);
+
+    return $validated !== false &&
+        $validated >= $minimum &&
+        $validated <= $maximum
+        ? $validated
+        : 0;
 }
 
 // Menangani error database

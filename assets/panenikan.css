@@ -526,6 +526,18 @@ tbody tr:hover {
     border-radius: 8px;
 }
 
+.harvest-photo {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.harvest-photo.preview {
+    display: block;
+    margin-top: 8px;
+}
+
 /* Footer */
 .footer {
     text-align: center;

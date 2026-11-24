@@ -11,8 +11,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         verify_csrf();
 
-        $action = $_POST['action'] ?? '';
-        $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT) ?: 0;
+        $action = request_text($_POST, 'action', 'Aksi', 32, true);
+        $id = request_integer(
+            $_POST,
+            'id',
+            'ID jenis ikan',
+            0,
+            2147483647,
+            true
+        );
 
         // Menghapus jenis ikan
         if ($action === 'hapus_ikan') {
@@ -38,15 +45,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Menambah atau mengedit jenis ikan
         if ($action === 'simpan_ikan') {
-            $nama = trim($_POST['nama_ikan'] ?? '');
-
-            if ($nama === '') {
-                throw new Exception('Nama ikan wajib diisi.');
-            }
-
-            if (mb_strlen($nama) > 100) {
-                throw new Exception('Nama ikan maksimal 100 karakter.');
-            }
+            $nama = request_text(
+                $_POST,
+                'nama_ikan',
+                'Nama ikan',
+                100,
+                true
+            );
 
             // Mengedit jenis ikan
             if ($id > 0) {
@@ -90,7 +95,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Mengambil data untuk edit
-$editId = filter_input(INPUT_GET, 'edit', FILTER_VALIDATE_INT) ?: 0;
+$editId = optional_input_integer(
+    $_GET['edit'] ?? null,
+    1,
+    2147483647
+);
 
 $edit = $editId > 0
     ? fetch_by_id($conn, 'jenis_ikan', $editId, $userId)
@@ -227,7 +236,7 @@ render_header('Jenis Ikan', 'ikan', flash_message(), $error);
                                     <form
                                         class="inline-form"
                                         method="post"
-                                        onsubmit="return confirm('Hapus jenis ikan ini? Jenis yang sudah digunakan dalam panen tidak dapat dihapus.')"
+                                        data-confirm="Hapus jenis ikan ini? Jenis yang sudah digunakan dalam panen tidak dapat dihapus."
                                     >
 
                                         <?= csrf_field() ?>

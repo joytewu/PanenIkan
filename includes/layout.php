@@ -20,7 +20,14 @@ function render_header($title, $active, $success = '', $error = '') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($title) ?> | PanenIkan</title>
-    <link rel="stylesheet" href="assets/panenikan.css">
+    <link
+        rel="stylesheet"
+        href="assets/panenikan.css?v=<?= (int) filemtime(__DIR__ . '/../assets/panenikan.css') ?>"
+    >
+    <script
+        src="assets/panenikan.js?v=<?= (int) filemtime(__DIR__ . '/../assets/panenikan.js') ?>"
+        defer
+    ></script>
 </head>
 <body>
 
@@ -45,7 +52,7 @@ function render_header($title, $active, $success = '', $error = '') {
                     class="nav <?= $active === $key ? 'active' : '' ?>"
                     href="<?= e($key) ?>.php"
                 >
-                    <span class="ico"><?= $icon ?></span>
+                    <span class="ico"><?= e($icon) ?></span>
                     <?= e($label) ?>
                 </a>
 
@@ -80,7 +87,7 @@ function render_header($title, $active, $success = '', $error = '') {
                 <?= e($_SESSION['nama'] ?? 'Admin PanenIkan') ?>
 
                 <form
-                    action="<?= e(APP_URL) ?>/auth/logout.php"
+                    action="auth/logout.php"
                     method="POST"
                     class="inline-form"
                 >

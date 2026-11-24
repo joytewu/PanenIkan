@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS panen (
     kolam_id INT NOT NULL,
     jumlah_ekor INT NOT NULL,
     berat_kg DECIMAL(10,2) NOT NULL,
+    foto_filename VARCHAR(64) NULL,
     CONSTRAINT fk_panen_owner
         FOREIGN KEY (owner_user_id)
         REFERENCES users(id)

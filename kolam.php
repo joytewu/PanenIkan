@@ -16,8 +16,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         verify_csrf();
 
-        $action = $_POST['action'] ?? '';
-        $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT) ?: 0;
+        $action = request_text($_POST, 'action', 'Aksi', 32, true);
+        $id = request_integer(
+            $_POST,
+            'id',
+            'ID kolam',
+            0,
+            2147483647,
+            true
+        );
 
         // Menghapus data kolam
         if ($action === 'hapus_kolam') {
@@ -45,20 +52,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Menambah atau mengedit data kolam
         if ($action === 'simpan_kolam') {
 
-            $nama = trim($_POST['nama_kolam'] ?? '');
-            $lokasi = trim($_POST['lokasi'] ?? '');
-
-            if ($nama === '') {
-                throw new Exception('Nama kolam wajib diisi.');
-            }
-
-            if (mb_strlen($nama) > 100) {
-                throw new Exception('Nama kolam maksimal 100 karakter.');
-            }
-
-            if (mb_strlen($lokasi) > 255) {
-                throw new Exception('Lokasi kolam maksimal 255 karakter.');
-            }
+            $nama = request_text(
+                $_POST,
+                'nama_kolam',
+                'Nama kolam',
+                100,
+                true
+            );
+            $lokasi = request_text(
+                $_POST,
+                'lokasi',
+                'Lokasi kolam',
+                255
+            );
 
             // Mengedit data kolam
             if ($id > 0) {
@@ -136,7 +142,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Mengambil data untuk proses edit
-$editId = filter_input(INPUT_GET, 'edit', FILTER_VALIDATE_INT) ?: 0;
+$editId = optional_input_integer(
+    $_GET['edit'] ?? null,
+    1,
+    2147483647
+);
 
 $edit = $editId > 0
     ? fetch_by_id($conn, 'kolam', $editId, $userId)
@@ -320,7 +330,7 @@ render_header('Data Kolam', 'kolam', flash_message(), $error);
                                     <form
                                         class="inline-form"
                                         method="post"
-                                        onsubmit="return confirm('Hapus kolam ini? Kolam yang digunakan dalam data panen tidak dapat dihapus.')"
+                                        data-confirm="Hapus kolam ini? Kolam yang digunakan dalam data panen tidak dapat dihapus."
                                     >
 
                                         <?= csrf_field() ?>

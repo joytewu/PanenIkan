@@ -30,11 +30,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         verify_csrf();
 
-        $username = trim($_POST['username'] ?? '');
-        $password = $_POST['password'] ?? '';
+        $username = request_text(
+            $_POST,
+            'username',
+            'Username',
+            50,
+            true
+        );
+        $password = $_POST['password'] ?? null;
 
-        if ($username === '' || $password === '') {
-            throw new Exception('Username dan password wajib diisi.');
+        if (
+            !is_string($password) ||
+            $password === '' ||
+            strlen($password) > 4096
+        ) {
+            throw new InvalidArgumentException('Password tidak valid.');
         }
 
         $stmt = $conn->prepare(
@@ -99,7 +109,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Login | PanenIkan</title>
-<link rel="stylesheet" href="../assets/panenikan.css">
+<link
+    rel="stylesheet"
+    href="../assets/panenikan.css?v=<?= (int) filemtime(__DIR__ . '/../assets/panenikan.css') ?>"
+>
 </head>
 
 <body>
@@ -128,6 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     type="text"
                     name="username"
                     required
+                    maxlength="50"
                     autocomplete="username"
                 >
             </label>
@@ -138,6 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     type="password"
                     name="password"
                     required
+                    maxlength="4096"
                     autocomplete="current-password"
                 >
             </label>

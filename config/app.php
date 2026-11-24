@@ -23,6 +23,17 @@ function app_deny_direct_access($file) {
 
 app_deny_direct_access(__FILE__);
 
+header(
+    "Content-Security-Policy: default-src 'self'; base-uri 'self'; " .
+    "object-src 'none'; frame-ancestors 'none'; form-action 'self'; " .
+    "script-src 'self'; style-src 'self' 'unsafe-inline'; " .
+    "img-src 'self' data:; font-src 'self'"
+);
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+
 date_default_timezone_set(APP_TIMEZONE);
 
 function app_start_session() {

@@ -224,7 +224,7 @@ render_header('Dashboard', 'dashboard', flash_message());
                     <div class="bar-track">
                         <div
                             class="bar-fill"
-                            style="width: <?= round($persentase, 1) ?>%;">
+                            style="width: <?= e(round($persentase, 1)) ?>%;">
                         </div>
                     </div>
 

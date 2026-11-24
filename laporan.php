@@ -10,7 +10,10 @@ $jenisOptions = get_jenis_options($conn, $userId);
 $kolamOptions = get_kolam_options($conn, $userId);
 
 // Mengambil filter tanggal
-$filterTanggal = trim($_GET['tanggal'] ?? '');
+$filterTanggal = optional_input_text(
+    $_GET['tanggal'] ?? null,
+    10
+);
 
 $dateObj = DateTime::createFromFormat('!Y-m-d', $filterTanggal);
 
@@ -22,17 +25,17 @@ if (
 }
 
 // Mengambil filter jenis ikan dan kolam
-$filterJenis = filter_input(
-    INPUT_GET,
-    'jenis',
-    FILTER_VALIDATE_INT
-) ?: 0;
+$filterJenis = optional_input_integer(
+    $_GET['jenis'] ?? null,
+    0,
+    2147483647
+);
 
-$filterKolam = filter_input(
-    INPUT_GET,
-    'kolam',
-    FILTER_VALIDATE_INT
-) ?: 0;
+$filterKolam = optional_input_integer(
+    $_GET['kolam'] ?? null,
+    0,
+    2147483647
+);
 
 // Menyiapkan query laporan
 $sql = '
@@ -273,7 +276,7 @@ render_header('Laporan Panen', 'laporan');
         <button
             class="btn light"
             type="button"
-            onclick="window.print()"
+            data-print
         >
             Cetak Laporan
         </button>
