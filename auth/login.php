@@ -4,6 +4,7 @@ require_once __DIR__ . '/../config/app.php';
 app_start_session();
 
 require_once __DIR__ . '/../includes/auth_check.php';
+require_once __DIR__ . '/../includes/input_validation.php';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
