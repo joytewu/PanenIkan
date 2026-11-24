@@ -1,4 +1,3 @@
-
 <?php
 
 function app_log($message, $level = 'INFO') {

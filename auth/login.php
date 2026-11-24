@@ -1,9 +1,8 @@
-
 <?php
 
-session_start();
-
 require_once __DIR__ . '/../config/app.php';
+app_start_session();
+
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/logger.php';
@@ -49,13 +48,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Mengamankan session setelah login berhasil
-        session_regenerate_id(true);
+        if (!session_regenerate_id(true)) {
+            throw new RuntimeException('Session gagal diperbarui setelah login.');
+        }
 
         $_SESSION = [];
 
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['nama'] = $user['nama'];
+        $_SESSION['last_activity'] = time();
 
         // Membuat token CSRF baru setelah login
         unset($_SESSION['csrf_token']);

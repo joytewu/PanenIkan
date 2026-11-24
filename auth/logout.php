@@ -1,10 +1,23 @@
-
 <?php
 
-session_start();
-
 require_once __DIR__ . '/../config/app.php';
+app_start_session();
+
+require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/logger.php';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Allow: POST');
+    http_response_code(405);
+    exit('Metode tidak diizinkan.');
+}
+
+try {
+    verify_csrf();
+} catch (Exception $e) {
+    http_response_code(403);
+    exit('Token keamanan tidak valid. Muat ulang halaman.');
+}
 
 // Mencatat aktivitas logout
 if (!empty($_SESSION['user_id'])) {
@@ -14,25 +27,11 @@ if (!empty($_SESSION['user_id'])) {
 // Menghapus seluruh data session
 $_SESSION = [];
 
-// Menghapus cookie session
-if (ini_get('session.use_cookies')) {
-
-    $params = session_get_cookie_params();
-
-    setcookie(
-        session_name(),
-        '',
-        time() - 42000,
-        $params['path'],
-        $params['domain'],
-        $params['secure'],
-        $params['httponly']
-    );
-
+if (!session_destroy()) {
+    throw new RuntimeException('Session gagal dihapus saat logout.');
 }
 
-// Mengakhiri session
-session_destroy();
+app_expire_session_cookie();
 
 // Kembali ke halaman login
 header('Location: ' . APP_URL . '/auth/login.php');

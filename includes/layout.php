@@ -1,4 +1,3 @@
-
 <?php
 
 function render_header($title, $active, $success = '', $error = '') {
@@ -77,12 +76,16 @@ function render_header($title, $active, $success = '', $error = '') {
                 ● &nbsp;
                 <?= e($_SESSION['nama'] ?? 'Admin PanenIkan') ?>
 
-                <a
-                    href="<?= e(APP_URL) ?>/auth/logout.php"
-                    class="btn light small"
+                <form
+                    action="<?= e(APP_URL) ?>/auth/logout.php"
+                    method="POST"
+                    class="inline-form"
                 >
-                    Logout
-                </a>
+                    <?= csrf_field() ?>
+                    <button type="submit" class="btn light small">
+                        Logout
+                    </button>
+                </form>
             </div>
 
         </header>

@@ -1,13 +1,9 @@
-
 <?php
-
-// Memulai session
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 
 // Memanggil konfigurasi aplikasi dan database
 require_once __DIR__ . '/../config/app.php';
+app_start_session();
+
 require_once __DIR__ . '/../config/database.php';
 
 // Memanggil sistem keamanan dan autentikasi

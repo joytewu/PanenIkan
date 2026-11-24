@@ -1,4 +1,3 @@
-
 <?php
 
 function generate_csrf_token() {
@@ -20,7 +19,9 @@ function verify_csrf() {
     $token = $_POST['csrf_token'] ?? '';
 
     if (
-        empty($_SESSION['csrf_token']) ||
+        !isset($_SESSION['csrf_token']) ||
+        !is_string($_SESSION['csrf_token']) ||
+        !is_string($token) ||
         !hash_equals($_SESSION['csrf_token'], $token)
     ) {
 

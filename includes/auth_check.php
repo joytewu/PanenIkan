@@ -1,10 +1,11 @@
-
 <?php
 
 // Memeriksa apakah pengguna sudah login
 function require_login() {
 
-    if (empty($_SESSION['user_id'])) {
+    app_start_session();
+
+    if (!is_logged_in()) {
 
         header('Location: ' . rtrim(APP_URL, '/') . '/auth/login.php');
         exit;
