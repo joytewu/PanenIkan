@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
         $error = 'Terjadi kesalahan database.';
 
-    } catch (Throwable $e) {
+    } catch (Exception $e) {
 
         app_log(
             'Permintaan login ditolak.',
@@ -155,7 +155,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'auth.login.failed',
             ['username' => $loginUsername]
         );
-        $error = $e->getMessage();
+        $error = 'Username atau password salah, atau permintaan tidak valid.';
+
+    } catch (Throwable $e) {
+
+        app_log(
+            'Permintaan login gagal karena kesalahan internal.',
+            'ERROR',
+            'auth.login.error',
+            ['username' => $loginUsername]
+        );
+        $error = 'Login tidak dapat diproses. Silakan coba kembali.';
 
     }
 

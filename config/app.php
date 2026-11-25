@@ -55,6 +55,18 @@ if (!in_array($appEnvironment, ['local', 'production'], true)) {
 
 define('APP_ENV', $appEnvironment);
 
+if (APP_ENV === 'production') {
+    foreach ([
+        'display_errors' => '0',
+        'display_startup_errors' => '0',
+        'log_errors' => '1',
+    ] as $setting => $value) {
+        if (ini_set($setting, $value) === false) {
+            error_log('PanenIkan could not apply production PHP setting: ' . $setting);
+        }
+    }
+}
+
 $configuredAppUrl = app_environment_value('PANENIKAN_URL');
 
 if ($configuredAppUrl === false || trim($configuredAppUrl) === '') {
@@ -91,13 +103,42 @@ function app_deny_direct_access($file) {
     $script = $_SERVER['SCRIPT_FILENAME'] ?? '';
 
     if ($script !== '' && realpath($script) === realpath($file)) {
-        http_response_code(404);
-        exit;
+        app_render_http_error(404);
     }
 
 }
 
-app_deny_direct_access(__FILE__);
+function app_render_http_error(int $status): void {
+    if (!in_array($status, [403, 404], true)) {
+        throw new InvalidArgumentException('Kode status HTTP tidak didukung.');
+    }
+
+    http_response_code($status);
+    $isForbidden = $status === 403;
+    $title = $isForbidden ? 'Akses ditolak' : 'Halaman tidak ditemukan';
+    $message = $isForbidden
+        ? 'Anda tidak memiliki izin untuk membuka halaman ini.'
+        : 'Halaman yang Anda cari tidak tersedia.';
+    $link = rtrim(APP_URL, '/') . ($isForbidden ? '/auth/login.php' : '/');
+
+    echo '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8">' .
+        '<meta name="viewport" content="width=device-width, initial-scale=1">' .
+        '<title>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') .
+        ' | PanenIkan</title><style>' .
+        'body{margin:0;background:#f4f8f7;color:#172d2b;font:16px ' .
+        'Segoe UI,Arial,sans-serif;display:grid;min-height:100vh;' .
+        'place-items:center}.card{background:#fff;border:1px solid #e5eeeb;' .
+        'border-radius:16px;padding:32px;max-width:480px;margin:20px}' .
+        'h1{font-size:24px}p{color:#71817e;line-height:1.6}' .
+        'a{display:inline-block;background:#087f70;color:#fff;padding:11px 16px;' .
+        'border-radius:9px;text-decoration:none;font-weight:700}</style>' .
+        '</head><body><main class="card"><h1>' .
+        htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1><p>' .
+        htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p><a href="' .
+        htmlspecialchars($link, ENT_QUOTES, 'UTF-8') .
+        '">Kembali</a></main></body></html>';
+    exit;
+}
 
 header(
     "Content-Security-Policy: default-src 'self'; base-uri 'self'; " .
@@ -109,10 +150,15 @@ header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+header('Cross-Origin-Opener-Policy: same-origin');
+header('Cross-Origin-Resource-Policy: same-origin');
+header('X-Permitted-Cross-Domain-Policies: none');
 
 if (APP_ENV === 'production' && app_is_https_request()) {
     header('Strict-Transport-Security: max-age=31536000');
 }
+
+app_deny_direct_access(__FILE__);
 
 date_default_timezone_set(APP_TIMEZONE);
 

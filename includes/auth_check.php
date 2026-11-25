@@ -80,8 +80,7 @@ final class AccessControl {
             ]
         );
 
-        http_response_code(403);
-        exit('Akses ditolak.');
+        app_render_http_error(403);
 
     }
 }

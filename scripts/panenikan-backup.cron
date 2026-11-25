@@ -1,0 +1,4 @@
+# Install as /etc/cron.d/panenikan-backup after configuring the private
+# PANENIKAN_BACKUP_REMOTE target and a restricted SSH key if offsite copies
+# are required. The script retains local archives for 30 days.
+0 2 * * * root /bin/bash /var/www/html/scripts/backup.sh >> /var/log/panenikan-backup.log 2>&1

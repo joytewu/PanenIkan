@@ -11,6 +11,7 @@ function render_header($title, $active, $success = '', $error = '') {
         'ikan'      => ['Jenis Ikan', '♧'],
         'kolam'     => ['Data Kolam', '▤'],
         'laporan'   => ['Laporan Panen', '▥'],
+        'security_audit' => ['Pemeriksaan Keamanan', '◇'],
     ];
 
 ?>

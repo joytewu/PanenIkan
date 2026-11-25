@@ -1,4 +1,6 @@
 Options -Indexes
+ErrorDocument 403 /errors/403.html
+ErrorDocument 404 /errors/404.html
 
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json

@@ -1,44 +1,90 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
 
-#!/bin/bash
+APP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PHP_BIN="${PHP_BIN:-php}"
+MYSQL_CONFIG_SCRIPT="$APP_ROOT/scripts/create_mysql_defaults_file.php"
+BACKUP_FILE="${1:-}"
 
-# Konfigurasi database
-DB_NAME="panenikan"
-DB_USER="root"
-DB_PASS=""
-
-# Memeriksa argumen file backup
-if [ -z "$1" ]; then
-    echo "Cara penggunaan:"
-    echo "./restore.sh nama_file_backup.sql"
+if [[ -z "$BACKUP_FILE" || ! -f "$BACKUP_FILE" ]]; then
+    echo "Usage: $0 /path/to/panenikan-backup.tar.gz" >&2
     exit 1
 fi
 
-BACKUP_FILE="$1"
-
-# Memeriksa keberadaan file
-if [ ! -f "$BACKUP_FILE" ]; then
-    echo "File backup tidak ditemukan!"
+if ! command -v "$PHP_BIN" >/dev/null 2>&1; then
+    echo "PHP CLI is required to restore PanenIkan backups." >&2
     exit 1
 fi
 
-echo "PERINGATAN: Database $DB_NAME akan dipulihkan."
-read -p "Lanjutkan? (y/n): " CONFIRM
+MYSQL_DEFAULTS="$("$PHP_BIN" "$MYSQL_CONFIG_SCRIPT")"
+WORK_DIR=''
+cleanup() {
+    if [[ -n "${MYSQL_DEFAULTS:-}" && -f "$MYSQL_DEFAULTS" ]]; then
+        rm -f -- "$MYSQL_DEFAULTS"
+    fi
+    if [[ -n "${WORK_DIR:-}" && -d "$WORK_DIR" ]]; then
+        rm -rf -- "$WORK_DIR"
+    fi
+}
+trap cleanup EXIT
 
-if [ "$CONFIRM" != "y" ]; then
-    echo "Restore dibatalkan."
-    exit 0
-fi
+WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/panenikan-restore.XXXXXX")"
+DB_NAME="$("$PHP_BIN" "$MYSQL_CONFIG_SCRIPT" --database-name)"
+ARCHIVE_CONTENTS="$(tar -tzf "$BACKUP_FILE")"
 
-# Proses restore
-if [ -n "$DB_PASS" ]; then
-    mysql -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < "$BACKUP_FILE"
-else
-    mysql -u "$DB_USER" "$DB_NAME" < "$BACKUP_FILE"
-fi
+while IFS= read -r entry; do
+    case "$entry" in
+        database.sql|uploads|uploads/*) ;;
+        *)
+            echo "Backup contains an unexpected path; restore aborted." >&2
+            exit 1
+            ;;
+    esac
+    case "$entry" in
+        /*|../*|*/../*|*/..|*\\*)
+            echo "Backup contains an unsafe path; restore aborted." >&2
+            exit 1
+            ;;
+    esac
+done <<< "$ARCHIVE_CONTENTS"
 
-if [ $? -eq 0 ]; then
-    echo "Restore database berhasil!"
-else
-    echo "Restore database gagal!"
+if ! grep -Fxq 'database.sql' <<< "$ARCHIVE_CONTENTS"; then
+    echo "Backup does not contain database.sql." >&2
     exit 1
 fi
+
+if ! grep -Fxq 'uploads' <<< "$ARCHIVE_CONTENTS"; then
+    echo "Backup does not contain the uploads directory." >&2
+    exit 1
+fi
+
+read -r -p "Target database [$DB_NAME]: " TARGET_DATABASE
+TARGET_DATABASE="${TARGET_DATABASE:-$DB_NAME}"
+
+if [[ ! "$TARGET_DATABASE" =~ ^[a-zA-Z0-9_]+$ ]]; then
+    echo "Target database name is invalid." >&2
+    exit 1
+fi
+
+printf 'This will replace data in database "%s". Type the database name to continue: ' "$TARGET_DATABASE"
+read -r CONFIRM_DATABASE
+if [[ "$CONFIRM_DATABASE" != "$TARGET_DATABASE" ]]; then
+    echo "Restore cancelled."
+    exit 1
+fi
+
+tar -xzf "$BACKUP_FILE" -C "$WORK_DIR" --no-same-owner
+mysql --defaults-extra-file="$MYSQL_DEFAULTS" "$TARGET_DATABASE" \
+    < "$WORK_DIR/database.sql"
+
+if [[ -n "${PANENIKAN_RESTORE_UPLOAD_DIR:-}" ]]; then
+    if [[ ! -d "$WORK_DIR/uploads" ]]; then
+        echo "Backup does not contain uploads." >&2
+        exit 1
+    fi
+    install -d -m 0750 "$PANENIKAN_RESTORE_UPLOAD_DIR"
+    cp -a "$WORK_DIR/uploads/." "$PANENIKAN_RESTORE_UPLOAD_DIR/"
+fi
+
+echo "Database restore completed for $TARGET_DATABASE."

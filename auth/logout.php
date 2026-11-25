@@ -18,8 +18,7 @@ require_login();
 try {
     verify_csrf();
 } catch (Exception $e) {
-    http_response_code(403);
-    exit('Token keamanan tidak valid. Muat ulang halaman.');
+    app_render_http_error(403);
 }
 
 // Mencatat aktivitas logout
