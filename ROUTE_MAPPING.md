@@ -90,6 +90,15 @@ local mode permits an HTTP session cookie. The root `.htaccess` redirects
 non-local HTTP/IP requests to `https://www.devps.online`; ensure Apache has
 `mod_rewrite` and `AllowOverride` enabled.
 
+Behind a trusted TLS reverse proxy, set `PANENIKAN_TRUST_PROXY=1` so forwarded
+`X-Forwarded-Proto: https` or `Forwarded: proto=https` is recognized. Do not
+enable this setting unless the proxy is the only reachable upstream or has
+already stripped/validated forwarded headers. For databases that support TLS,
+set `PANENIKAN_DB_SSL_CA` to the CA certificate path and, when certificate
+verification is required, `PANENIKAN_DB_SSL_VERIFY=1`; client key and
+certificate paths may optionally be configured with
+`PANENIKAN_DB_SSL_KEY` and `PANENIKAN_DB_SSL_CERT`.
+
 Example production configuration (replace the password placeholder on the
 server, never in the repository):
 

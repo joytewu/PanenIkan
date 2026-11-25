@@ -71,7 +71,7 @@ $configuredAppUrl = app_environment_value('PANENIKAN_URL');
 
 if ($configuredAppUrl === false || trim($configuredAppUrl) === '') {
     $configuredAppUrl = APP_ENV === 'local'
-        ? 'http://localhost'
+        ? 'https://localhost'
         : 'https://www.devps.online';
 }
 
@@ -93,10 +93,93 @@ define('APP_TIMEZONE', 'Asia/Makassar');
 function app_is_https_request(): bool {
     $https = $_SERVER['HTTPS'] ?? '';
 
-    return is_string($https) &&
+    $directHttps = is_string($https) &&
         $https !== '' &&
         strtolower($https) !== 'off';
+
+    if ($directHttps) {
+        return true;
+    }
+
+    $trustProxy = app_environment_value('PANENIKAN_TRUST_PROXY');
+
+    if ($trustProxy !== '1') {
+        return false;
+    }
+
+    $forwardedProto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '';
+
+    if (is_string($forwardedProto)) {
+        $firstProto = strtolower(trim(explode(',', $forwardedProto)[0]));
+
+        if ($firstProto === 'https') {
+            return true;
+        }
+    }
+
+    $forwarded = $_SERVER['HTTP_FORWARDED'] ?? '';
+
+    return is_string($forwarded) &&
+        preg_match('/(?:^|[;,]\s*)proto\s*=\s*"?https"?(?:;|,|$)/i', $forwarded) === 1;
 }
+
+function app_enforce_https(): void {
+    if (PHP_SAPI === 'cli') {
+        return;
+    }
+
+    $configured = parse_url(APP_URL);
+
+    if (!is_array($configured) || !isset($configured['scheme'], $configured['host'])) {
+        throw new RuntimeException('PANENIKAN_URL tidak valid.');
+    }
+
+    $requestHost = $_SERVER['HTTP_HOST'] ?? '';
+    $requestHostName = '';
+
+    if (is_string($requestHost) && $requestHost !== '') {
+        $hostOnly = parse_url('//' . $requestHost, PHP_URL_HOST);
+
+        if (is_string($hostOnly)) {
+            $requestHostName = strtolower(trim($hostOnly, '[]'));
+        }
+    }
+    $configuredHost = strtolower($configured['host']);
+    $needsCanonicalRedirect =
+        APP_ENV === 'production' &&
+        (
+            !app_is_https_request() ||
+            $requestHostName !== $configuredHost
+        ) ||
+        APP_ENV === 'local' &&
+        (
+            !app_is_https_request() ||
+            (
+                $requestHostName !== '' &&
+                in_array($configuredHost, ['localhost', '127.0.0.1', '::1'], true) &&
+                $requestHostName !== $configuredHost
+            )
+        );
+
+    if (!$needsCanonicalRedirect) {
+        return;
+    }
+
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+
+    if (!is_string($requestUri) || $requestUri === '' || $requestUri[0] !== '/') {
+        $requestUri = '/';
+    }
+
+    if (preg_match('/[\r\n]/', $requestUri) === 1) {
+        $requestUri = '/';
+    }
+
+    header('Location: ' . rtrim(APP_URL, '/') . $requestUri, true, 301);
+    exit;
+}
+
+app_enforce_https();
 
 function app_deny_direct_access($file) {
 

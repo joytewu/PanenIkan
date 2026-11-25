@@ -6,6 +6,7 @@ if (PHP_SAPI !== 'cli') {
 }
 
 require_once __DIR__ . '/../includes/logger.php';
+require_once __DIR__ . '/../config/app.php';
 
 function monitor_emit(int $priority, string $message): void {
     if (
@@ -145,6 +146,13 @@ foreach ($alerts as $alert) {
     monitor_emit($monitorWarningPriority, $alert);
 }
 
+app_log(
+    'Rule-based log monitor detected suspicious activity.',
+    'WARNING',
+    'monitor.rule.alert',
+    $summary
+);
+
 if (app_environment_value('PANENIKAN_AI_ENABLED') !== '1') {
     exit(0);
 }
@@ -220,5 +228,25 @@ if ($analysis['suspicious'] || $analysis['risk'] === 'high') {
     monitor_emit(
         $monitorWarningPriority,
         'Local AI flagged activity as ' . $analysis['risk'] . ': ' . $reason
+    );
+    app_log(
+        'Local AI flagged suspicious activity for operator review.',
+        'WARNING',
+        'monitor.ai.alert',
+        [
+            'risk' => $analysis['risk'],
+            'reason' => $reason,
+            'summary' => $summary,
+        ]
+    );
+} else {
+    app_log(
+        'Local AI completed advisory analysis.',
+        'INFO',
+        'monitor.ai.completed',
+        [
+            'risk' => $analysis['risk'],
+            'summary' => $summary,
+        ]
     );
 }

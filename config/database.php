@@ -30,12 +30,50 @@ $databaseName = is_string($databaseName) && $databaseName !== ''
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 try {
-    $conn = new mysqli(
-        $databaseHost,
-        $databaseUser,
-        $databasePassword,
-        $databaseName
-    );
+    $sslCa = app_environment_value('PANENIKAN_DB_SSL_CA');
+    $sslEnabled = is_string($sslCa) && $sslCa !== '';
+    $sslVerify = app_environment_value('PANENIKAN_DB_SSL_VERIFY') === '1';
+
+    if ($sslEnabled) {
+        $conn = mysqli_init();
+
+        if ($conn === false) {
+            throw new RuntimeException('Inisialisasi koneksi database gagal.');
+        }
+
+        $cipherSuites = '';
+        $sslKey = app_environment_value('PANENIKAN_DB_SSL_KEY');
+        $sslCert = app_environment_value('PANENIKAN_DB_SSL_CERT');
+        $sslKey = is_string($sslKey) ? $sslKey : '';
+        $sslCert = is_string($sslCert) ? $sslCert : '';
+        $conn->ssl_set(
+            $sslKey,
+            $sslCert,
+            $sslCa,
+            null,
+            $cipherSuites
+        );
+        $verifyFlag = defined('MYSQLI_CLIENT_SSL_VERIFY_SERVER_CERT')
+            ? MYSQLI_CLIENT_SSL_VERIFY_SERVER_CERT
+            : MYSQLI_CLIENT_SSL;
+        $flags = $sslVerify ? $verifyFlag : MYSQLI_CLIENT_SSL;
+        $conn->real_connect(
+            $databaseHost,
+            $databaseUser,
+            $databasePassword,
+            $databaseName,
+            null,
+            null,
+            $flags
+        );
+    } else {
+        $conn = new mysqli(
+            $databaseHost,
+            $databaseUser,
+            $databasePassword,
+            $databaseName
+        );
+    }
 
     $conn->set_charset('utf8mb4');
 } catch (mysqli_sql_exception $e) {
