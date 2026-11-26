@@ -29,8 +29,7 @@ a {
 
 button,
 input,
-select,
-textarea {
+select {
     font-family: inherit;
 }
 
@@ -389,8 +388,7 @@ label {
 }
 
 input,
-select,
-textarea {
+select {
     width: 100%;
     padding: 12px 13px;
     border: 1px solid #dce7e3;
@@ -402,15 +400,9 @@ textarea {
 }
 
 input:focus,
-select:focus,
-textarea:focus {
+select:focus {
     outline: 2px solid #b4e5da;
     border-color: var(--green);
-}
-
-textarea {
-    resize: vertical;
-    min-width: 180px;
 }
 
 .full {
@@ -505,116 +497,6 @@ tbody tr:hover {
     text-align: center;
     color: var(--muted);
     padding: 28px;
-}
-
-.audit-score-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-}
-
-.audit-score-grid .stat {
-    padding: 16px;
-}
-
-.audit-legend {
-    display: flex;
-    gap: 18px;
-    flex-wrap: wrap;
-    color: var(--muted);
-    font-size: 12px;
-    margin-top: 17px;
-}
-
-.audit-legend span {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-}
-
-.audit-dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: #98a8a4;
-}
-
-.audit-dot.yes {
-    background: var(--green);
-}
-
-.audit-dot.no {
-    background: var(--red);
-}
-
-.audit-table {
-    min-width: 1040px;
-}
-
-.audit-table th:nth-child(1),
-.audit-table td:nth-child(1) {
-    width: 45px;
-}
-
-.audit-table th:nth-child(3),
-.audit-table td:nth-child(3) {
-    white-space: nowrap;
-    width: 95px;
-}
-
-.audit-table th:nth-child(4),
-.audit-table th:nth-child(5),
-.audit-table td:nth-child(4),
-.audit-table td:nth-child(5) {
-    text-align: center;
-    width: 78px;
-}
-
-.audit-table td {
-    vertical-align: top;
-}
-
-.audit-table textarea {
-    min-width: 210px;
-    margin-top: 0;
-}
-
-.audit-choice {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    cursor: pointer;
-    color: var(--ink);
-}
-
-.audit-choice input {
-    width: auto;
-    margin: 0;
-    accent-color: var(--green);
-}
-
-.audit-detail,
-.audit-pending {
-    color: var(--muted);
-    font-size: 11px;
-    line-height: 1.5;
-    margin-top: 6px;
-    max-width: 390px;
-}
-
-.audit-pending {
-    color: #966b13;
-    font-weight: 700;
-}
-
-.audit-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    flex-wrap: wrap;
-    margin: 8px 0 24px;
 }
 
 /* Grafik */
@@ -736,10 +618,6 @@ tbody tr:hover {
         gap: 10px;
     }
 
-    .audit-score-grid {
-        grid-template-columns: 1fr;
-    }
-
     .stat {
         padding: 15px;
     }
@@ -768,13 +646,6 @@ tbody tr:hover {
         align-items: flex-start;
     }
 
-    .audit-actions {
-        align-items: stretch;
-    }
-
-    .audit-actions .btn {
-        width: 100%;
-    }
 }
 
 /* Tampilan cetak laporan */

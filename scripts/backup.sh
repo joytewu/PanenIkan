@@ -8,19 +8,31 @@ BACKUP_DIR="${PANENIKAN_BACKUP_DIR:-/var/backups/panenikan}"
 UPLOAD_DIR="${PANENIKAN_UPLOAD_DIR:-$(dirname "$APP_ROOT")/panenikan-private/uploads/panen}"
 MYSQL_CONFIG_SCRIPT="$APP_ROOT/scripts/create_mysql_defaults_file.php"
 
+if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
+    echo "Run PanenIkan backups as root to use local MySQL socket authentication." >&2
+    exit 1
+fi
+
 if ! command -v "$PHP_BIN" >/dev/null 2>&1; then
     echo "PHP CLI is required for PanenIkan backups." >&2
     exit 1
 fi
 
-install -d -m 0700 "$BACKUP_DIR"
+if ! command -v mysqldump >/dev/null 2>&1; then
+    echo "mysqldump is required for PanenIkan backups." >&2
+    exit 1
+fi
+
+if [[ -L "$BACKUP_DIR" ]]; then
+    echo "Backup destination must not be a symbolic link." >&2
+    exit 1
+fi
+
+install -d -o root -g root -m 0700 "$BACKUP_DIR"
+chown root:root "$BACKUP_DIR"
 chmod 0700 "$BACKUP_DIR"
 
-MYSQL_DEFAULTS="$("$PHP_BIN" "$MYSQL_CONFIG_SCRIPT")"
 cleanup() {
-    if [[ -n "${MYSQL_DEFAULTS:-}" && -f "$MYSQL_DEFAULTS" ]]; then
-        rm -f -- "$MYSQL_DEFAULTS"
-    fi
     if [[ -n "${WORK_DIR:-}" && -d "$WORK_DIR" ]]; then
         rm -rf -- "$WORK_DIR"
     fi
@@ -47,15 +59,34 @@ fi
 mkdir "$WORK_DIR/uploads"
 echo "Creating database and upload backup..."
 mysqldump \
-    --defaults-extra-file="$MYSQL_DEFAULTS" \
+    --protocol=socket \
+    --user=root \
     --single-transaction \
     --routines \
     --triggers \
     --events \
     --no-tablespaces \
     "$DB_NAME" > "$WORK_DIR/database.sql"
+
+if [[ ! -s "$WORK_DIR/database.sql" ]]; then
+    echo "Database dump is empty; backup aborted." >&2
+    exit 1
+fi
+
 cp -a "$UPLOAD_DIR/." "$WORK_DIR/uploads/"
 tar -czf "$TMP_ARCHIVE" -C "$WORK_DIR" database.sql uploads
+if ! gzip -t "$TMP_ARCHIVE"; then
+    echo "Backup archive failed gzip integrity validation." >&2
+    exit 1
+fi
+
+ARCHIVE_CONTENTS="$(tar -tzf "$TMP_ARCHIVE")"
+if ! grep -Fxq 'database.sql' <<< "$ARCHIVE_CONTENTS" ||
+    ! grep -Eq '^uploads/?$' <<< "$ARCHIVE_CONTENTS"; then
+    echo "Backup archive is missing the database dump or uploads directory." >&2
+    exit 1
+fi
+
 chmod 0600 "$TMP_ARCHIVE"
 mv -- "$TMP_ARCHIVE" "$ARCHIVE"
 
@@ -64,7 +95,23 @@ if [[ -n "$REMOTE_TARGET" ]]; then
         echo "Remote backup is configured but rsync is not installed." >&2
         exit 1
     fi
-    rsync -a --chmod=Du=rwx,Dgo=,Fu=rw,Fgo= "$ARCHIVE" "${REMOTE_TARGET%/}/"
+
+    rsync -a --checksum --chmod=Du=rwx,Dgo=,Fu=rw,Fgo= \
+        "$ARCHIVE" "${REMOTE_TARGET%/}/"
+
+    if ! VERIFY_OUTPUT="$(rsync -a --checksum --dry-run \
+        --itemize-changes --out-format='%i %n' \
+        "$ARCHIVE" "${REMOTE_TARGET%/}/")"; then
+        echo "Remote backup verification command failed." >&2
+        exit 1
+    fi
+
+    if [[ -n "$VERIFY_OUTPUT" ]]; then
+        echo "Remote backup verification found a difference:" >&2
+        printf '%s\n' "$VERIFY_OUTPUT" >&2
+        exit 1
+    fi
+
     echo "Local and remote backup completed: $ARCHIVE"
 else
     echo "Local backup completed: $ARCHIVE"

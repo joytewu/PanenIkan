@@ -29,7 +29,6 @@ changes are handled by POST on the same URL and require a valid CSRF token.
 | `/ikan.php` | GET, HEAD; optional `edit` ID. POST `action=simpan_ikan` or `action=hapus_ikan`, optional record `id` | List, add, edit, and delete fish types |
 | `/kolam.php` | GET, HEAD; optional `edit` ID. POST `action=simpan_kolam` or `action=hapus_kolam`, optional record `id` | List, add, edit, and delete ponds |
 | `/laporan.php` | GET, HEAD; optional `tanggal`, `jenis`, and `kolam` filters | View the shared harvest report |
-| `/security_audit.php` | GET, HEAD; POST with CSRF | Review and save the H1–H6, I1–I8, and J1–J3 checklist; administrator only |
 | `/auth/logout.php` | POST only, CSRF required | Ends the current authenticated session; other methods receive 405 |
 
 Protected pages accept only GET, HEAD, or POST; unsupported methods receive 405.
@@ -145,47 +144,44 @@ Install and bind Ollama to loopback, and pull the model configured in the cron
 file before enabling the scheduled monitor. The model's output is advisory only and
 does not block accounts or execute commands.
 
-## H/I/J security audit
+## H/I/J implementation and deployment
 
-The administrator-only `/security_audit.php` page presents each H1–H6, I1–I8,
-and J1–J3 item with Yes/No checkboxes, a note field, and a proportional
-section weight (H, I, and J each contribute 10 points). A blank answer remains
-**Belum Diperiksa** and does not earn points. Browser-side score updates are
-for convenience; the server validates every answer and note and saves all
-items in one transaction. Nothing is marked Yes or No by default. Some checks
-require access to the production server and must be verified there before
-selecting a result.
+The application suppresses production error output, logs errors, and returns
+generic 403/404 responses. Its security headers are emitted by `config/app.php`;
+the root `.htaccess` disables directory listings, blocks dotfiles, and
+redirects non-local HTTP requests. `config/php-production.ini` disables
+displayed errors and PHP shell/process functions that the application does
+not use. Install that file into the matching PHP Apache and CLI `conf.d`
+directories and restart the PHP service; simply deploying it in the source
+does not change the server's active PHP settings.
 
-Apply the audit-results table once after backing up the database:
+The application cannot change host-level SSH, firewall, MySQL account, or
+Fail2Ban settings. Those changes must be applied on the Ubuntu server. For
+SSH, open the selected replacement port in the provider firewall and UFW
+before changing `sshd_config`; keep the current session open and verify a
+second SSH connection before closing port 22 or disabling password login.
+Install and test an authorized public key before disabling password
+authentication. Review the `panenikan_app` MySQL grants and ensure the app
+account has only the required database privileges; do not remove root access
+until a separate administrative account and recovery path are confirmed.
+Enable and verify Fail2Ban and UFW after checking that SSH and HTTPS remain
+reachable. An A+ header grade requires an external scan of the live HTTPS
+domain and cannot be guaranteed from PHP source alone.
 
-```sh
-sudo mysql panenikan < /var/www/html/database/migrations/20261125_security_audit_checks.sql
-```
+`scripts/backup.sh` creates a mode-restricted archive containing the database
+and private harvest uploads. It runs as root and uses the local MySQL socket,
+which matches the production `auth_socket` root account; the application
+database password is not embedded in backup commands. The script validates the
+archive before publishing it and retains local archives for 30 days. Install
+`scripts/panenikan-backup.cron` as `/etc/cron.d/panenikan-backup` only after a
+successful manual backup. Test recovery with `scripts/restore.sh` against an
+isolated test database and an empty temporary upload directory; the script
+requires explicit confirmation before replacing a target database.
 
-`config/php-production.ini` is a PHP deployment template. Review the installed
-PHP version and use the file as the production PHP configuration; it disables
-error display and shell/process functions not used by application PHP. Restart
-the applicable PHP/Apache service and verify the effective runtime settings.
-The source also provides generic 403/404 pages, production error display
-settings, security headers, `Options -Indexes`, and direct-access blocks. An
-external header-rating service is required to establish an A+ result.
-
-The backup scripts create a private archive containing a consistent database
-dump and private harvest uploads. They read database credentials through the
-private PHP config and write a mode-0600 temporary MySQL defaults file; no
-password is placed in a command argument. Configure `/var/backups/panenikan`
-as a private local destination, test `scripts/backup.sh`, then install
-`scripts/panenikan-backup.cron` as `/etc/cron.d/panenikan-backup`. Set
-`PANENIKAN_BACKUP_REMOTE` in the private config and configure a restricted SSH
-key plus rsync on a separate backup host to enable offsite copies. Without
-that remote target, only a local backup is made.
-
-For recovery, first create an isolated test database and ensure the database
-account is allowed to write to it. Run `bash scripts/restore.sh <archive>` and
-type the exact target database name when prompted; test restoration on the
-isolated database before using a production target. To restore uploaded photo
-files as well, set `PANENIKAN_RESTORE_UPLOAD_DIR` to a safe destination before
-running the script. Record the date, archive, database checks, and file checks
-in the audit notes. Backup, offsite transfer, SSH, firewall, MySQL grants,
-Fail2Ban, and external header grade are environment-dependent and are not
-automatically marked complete by the application.
+Configure `PANENIKAN_BACKUP_REMOTE` and a restricted SSH key to rsync and
+verify the archive on a genuinely separate backup host. Without that target
+the backup remains on the same server and J3 is not met. Backups, remote
+copies, scheduled runs, and restore outcomes must be verified on the server;
+they are not activated by deploying PHP files alone.
+Ubuntu templates for SSH port 9090, UFW, Fail2Ban, and MySQL application
+privileges are under `deployment/`; follow `deployment/README.md` in order.

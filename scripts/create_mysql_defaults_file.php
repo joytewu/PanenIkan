@@ -22,12 +22,8 @@ $databaseName = is_string($databaseName) && $databaseName !== ''
     ? $databaseName
     : 'panenikan';
 
-if (
-    !is_string($databasePassword) ||
-    $databasePassword === '' ||
-    preg_match('/\A[a-zA-Z0-9_]+\z/', $databaseName) !== 1
-) {
-    fwrite(STDERR, "PanenIkan database configuration is incomplete.\n");
+if (preg_match('/\A[a-zA-Z0-9_]+\z/', $databaseName) !== 1) {
+    fwrite(STDERR, "PanenIkan database name is invalid.\n");
     exit(1);
 }
 
@@ -51,6 +47,11 @@ if (($argv[1] ?? '') === '--backup-remote') {
         (is_string($remote) ? trim($remote) : '') . PHP_EOL
     );
     exit(0);
+}
+
+if (!is_string($databasePassword) || $databasePassword === '') {
+    fwrite(STDERR, "PanenIkan database password is not configured.\n");
+    exit(1);
 }
 
 $defaultsFile = tempnam(sys_get_temp_dir(), 'panenikan-mysql-');

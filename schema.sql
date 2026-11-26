@@ -11,7 +11,6 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
 CREATE TABLE IF NOT EXISTS jenis_ikan (
     id INT AUTO_INCREMENT PRIMARY KEY,
     owner_user_id INT NULL,
@@ -62,19 +61,3 @@ CREATE TABLE IF NOT EXISTS panen (
         ON DELETE RESTRICT
         ON UPDATE CASCADE
 );
-
-CREATE TABLE IF NOT EXISTS security_audit_checks (
-    item_code VARCHAR(8) NOT NULL PRIMARY KEY,
-    answer ENUM('yes', 'no') NULL DEFAULT NULL,
-    note VARCHAR(500) NOT NULL DEFAULT '',
-    updated_by INT NOT NULL,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_security_audit_updated_by
-        FOREIGN KEY (updated_by)
-        REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE
-) ENGINE=InnoDB
-  DEFAULT CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;

@@ -14,7 +14,8 @@ if (!in_array($method, ['GET', 'HEAD'], true)) {
 $id = optional_input_integer($_GET['id'] ?? null, 1, 2147483647);
 
 if ($id < 1) {
-    http_response_code(404);
+    http_response_code(404);    Get-Location
+    ssh -i "C:\Users\Acer\.ssh\panenikan_admin" -o IdentitiesOnly=yes -p 22 peachdevops@103.176.78.83
     exit;
 }
 
